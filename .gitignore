@@ -4,3 +4,4 @@ tests/*
 !tests/rere.py
 !tests/test.list
 !tests/test.list.bi
+!tests/README.md
