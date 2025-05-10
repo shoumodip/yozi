@@ -71,8 +71,20 @@ func Check(n node.Node) {
 		typeAssertArith(n.Operand)
 
 	case *node.Block:
+		for _, it := range n.Stmts {
+			Check(it)
+		}
+
 	case *node.If:
+		Check(n.Condition)
+		typeAssert(n.Condition, node.Type{Kind: node.TypeBool})
+		Check(n.Consequent)
+		Check(n.Antecedent)
+
 	case *node.While:
+		Check(n.Condition)
+		typeAssert(n.Condition, node.Type{Kind: node.TypeBool})
+		Check(n.Body)
 
 	default:
 		panic("unreachable")
