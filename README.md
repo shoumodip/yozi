@@ -6,6 +6,12 @@ Install [`clang`](https://clang.llvm.org/)
 
 ```console
 $ go build
-$ ./yozi
-$ ./hello
 ```
+
+## Behaviour Tests
+```console
+$ cd tests
+$ ./rere.py replay test.list
+```
+
+For now, the tests can also serve as examples
