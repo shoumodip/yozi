@@ -2,47 +2,100 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
-
-	"github.com/llir/llvm/ir"
-	"github.com/llir/llvm/ir/constant"
-	"github.com/llir/llvm/ir/types"
+	"strings"
+	"yozi/checker"
+	"yozi/compiler"
+	"yozi/lexer"
+	"yozi/parser"
 )
 
+func usage(w io.Writer) {
+	fmt.Fprintln(w, "Usage:")
+	fmt.Fprintln(w, "    yozi [FLAGS] <FILE>")
+	fmt.Fprintln(w)
+	fmt.Fprintln(w, "Flags:")
+	fmt.Fprintln(w, "    -h, -help    Show this help message")
+	fmt.Fprintln(w, "    -r, -run     Run the program after compiling it")
+}
+
+type Args struct {
+	run  bool
+	path string
+	rest []string
+}
+
+func parseArgs() Args {
+	args := Args{
+		run:  false,
+		path: "",
+		rest: os.Args[1:],
+	}
+
+	for len(args.rest) != 0 {
+		arg := args.rest[0]
+		args.rest = args.rest[1:]
+
+		switch arg {
+		case "-h", "-help", "--help":
+			usage(os.Stdout)
+			os.Exit(0)
+
+		case "-r", "-run", "--run":
+			args.run = true
+
+		default:
+			if strings.HasPrefix(arg, "-") {
+				fmt.Fprintln(os.Stderr, "ERROR: Invalid flag '"+arg+"'")
+				fmt.Fprintln(os.Stderr)
+				usage(os.Stderr)
+				os.Exit(1)
+			}
+
+			args.path = arg
+			return args
+		}
+	}
+
+	fmt.Fprintln(os.Stderr, "ERROR: Input file not provided")
+	fmt.Fprintln(os.Stderr)
+	usage(os.Stderr)
+	os.Exit(1)
+
+	return args
+}
+
 func main() {
-	module := ir.NewModule()
-	message := constant.NewCharArrayFromString("Hello, world!\x00")
-	messagePtr := module.NewGlobalDef("", message)
+	args := parseArgs()
 
-	puts := module.NewFunc("puts", types.I32, ir.NewParam("", types.NewPointer(types.I8)))
-	main := module.NewFunc("main", types.I32)
-	zero := constant.NewInt(types.I32, 0)
-
-	entry := main.NewBlock("")
-	entry.NewCall(puts, constant.NewGetElementPtr(message.Typ, messagePtr, zero, zero))
-	entry.NewRet(zero)
-
-	asmPath := "hello.ll"
-	exePath := "hello"
-
-	f, err := os.Create(asmPath)
+	lexer, err := lexer.New(args.path)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %s\n", err)
+		fmt.Fprintln(os.Stderr, "ERROR: Could not open file '"+args.path+"'")
+		fmt.Fprintln(os.Stderr)
+		usage(os.Stderr)
 		os.Exit(1)
 	}
 
-	module.WriteTo(f)
-	f.Close()
+	parser := parser.Parser{}
+	parser.File(lexer)
 
-	cmd := exec.Command("clang", "-Wno-override-module", "-o", exePath, asmPath)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	err = cmd.Run()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %s\n", err)
-		os.Exit(1)
+	for _, node := range parser.Nodes {
+		checker.Check(node)
 	}
 
-	os.Remove(asmPath)
+	exePath := strings.TrimSuffix(args.path, ".yo")
+	compiler.Program(parser.Nodes, exePath)
+	if args.run {
+		cmd := exec.Command("./" + exePath)
+		cmd.Stdin = os.Stdin
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		err = cmd.Run()
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "ERROR:", err)
+			os.Exit(1)
+		}
+	}
 }
