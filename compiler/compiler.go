@@ -92,6 +92,22 @@ func (c *Compiler) stmt(n node.Node) {
 			c.stmt(stmt)
 		}
 
+	case *node.If:
+		conditionName := c.valueNew()
+		consequentName := "L" + c.valueNew()[1:]
+		antecendentName := "L" + c.valueNew()[1:]
+		confluenceName := "L" + c.valueNew()[1:]
+		condition := c.expr(n.Condition)
+		fmt.Fprintf(c.out, "    %s = icmp ne i32 %s, 0\n", conditionName, condition)
+		fmt.Fprintf(c.out, "    br i1 %s, label %%%s, label %%%s\n", conditionName, consequentName, antecendentName)
+		fmt.Fprintf(c.out, "%s:\n", consequentName)
+		c.stmt(n.Consequent)
+		fmt.Fprintf(c.out, "    br label %%%s\n", confluenceName)
+		fmt.Fprintf(c.out, "%s:\n", antecendentName)
+		c.stmt(n.Antecedent)
+		fmt.Fprintf(c.out, "    br label %%%s\n", confluenceName)
+		fmt.Fprintf(c.out, "%s:\n", confluenceName)
+
 	default:
 		c.expr(n)
 	}

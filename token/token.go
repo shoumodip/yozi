@@ -28,7 +28,11 @@ const (
 	LBrace
 	RBrace
 
+	If
+	Else
+
 	Print
+
 	COUNT
 )
 
@@ -47,6 +51,8 @@ var Names = [COUNT]string{
 	LBrace: "'{'",
 	RBrace: "'}'",
 
+	If:    "'if'",
+	Else:  "'else'",
 	Print: "'print'",
 }
 

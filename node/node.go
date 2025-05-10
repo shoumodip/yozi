@@ -14,6 +14,11 @@ type Node interface {
 	Debug(w io.Writer, depth int) // @Temporary
 }
 
+type Expr interface {
+	Node
+	expr()
+}
+
 type Stmt interface {
 	Node
 	stmt()
@@ -35,6 +40,8 @@ func (a *Atom) GetType() Type {
 func (a *Atom) SetType(t Type) {
 	a.Type = t
 }
+
+func (a *Atom) expr() {}
 
 // @Temporary
 func (a Atom) Debug(w io.Writer, depth int) {
@@ -60,6 +67,8 @@ func (u *Unary) GetType() Type {
 func (u *Unary) SetType(t Type) {
 	u.Type = t
 }
+
+func (u *Unary) expr() {}
 
 // @Temporary
 func (u Unary) Debug(w io.Writer, depth int) {
@@ -87,6 +96,8 @@ func (b *Binary) GetType() Type {
 func (b *Binary) SetType(t Type) {
 	b.Type = t
 }
+
+func (b *Binary) expr() {}
 
 // @Temporary
 func (b Binary) Debug(w io.Writer, depth int) {
@@ -126,6 +137,38 @@ func (p Print) Debug(w io.Writer, depth int) {
 
 func writeIndent(w io.Writer, depth int) {
 	fmt.Fprintf(w, "%*s", depth*4, "")
+}
+
+type If struct {
+	Token token.Token
+	Type  Type
+
+	Condition  Expr
+	Consequent Stmt
+	Antecedent Stmt
+}
+
+func (i *If) Literal() token.Token {
+	return i.Token
+}
+
+func (i *If) GetType() Type {
+	return i.Type
+}
+
+func (i *If) SetType(t Type) {
+	i.Type = t
+}
+
+func (i *If) stmt() {}
+
+func (i *If) Debug(w io.Writer, depth int) {
+	writeIndent(w, depth)
+	fmt.Fprint(w, "if ")
+	i.Condition.Debug(w, 0)
+	i.Consequent.Debug(w, depth)
+	fmt.Fprint(w, "else ")
+	i.Antecedent.Debug(w, depth)
 }
 
 type Block struct {

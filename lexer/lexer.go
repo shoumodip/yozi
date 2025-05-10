@@ -183,6 +183,12 @@ func (l *Lexer) Next() token.Token {
 		case "print":
 			tok.Kind = token.Print
 
+		case "if":
+			tok.Kind = token.If
+
+		case "else":
+			tok.Kind = token.Else
+
 		default:
 			tok.Kind = token.Ident
 		}
