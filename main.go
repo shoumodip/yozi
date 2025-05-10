@@ -35,7 +35,10 @@ func main() {
 	module.WriteTo(f)
 	f.Close()
 
-	err = exec.Command("clang", "-o", exePath, asmPath).Run()
+	cmd := exec.Command("clang", "-Wno-override-module", "-o", exePath, asmPath)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	err = cmd.Run()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %s\n", err)
 		os.Exit(1)
