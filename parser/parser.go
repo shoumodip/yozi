@@ -36,8 +36,8 @@ type Parser struct {
 }
 
 // @TokenKind
-func (p *Parser) expr(mbp int) node.Node {
-	var n node.Node
+func (p *Parser) expr(mbp int) node.Expr {
+	var n node.Expr
 
 	tok := p.lexer.Next()
 	switch tok.Kind {
@@ -79,8 +79,8 @@ func (p *Parser) expr(mbp int) node.Node {
 }
 
 // @TokenKind
-func (p *Parser) stmt() node.Node {
-	var n node.Node
+func (p *Parser) stmt() node.Stmt {
+	var n node.Stmt
 
 	switch tok := p.lexer.Next(); tok.Kind {
 	case token.Print:
@@ -89,12 +89,72 @@ func (p *Parser) stmt() node.Node {
 			Operand: p.expr(powerSet),
 		}
 
+	case token.If:
+		n = p.ifBody(tok)
+
+	case token.While:
+		condition := p.expr(powerSet)
+		body := p.block()
+
+		n = &node.While{
+			Token:     tok,
+			Condition: condition,
+			Body:      body,
+		}
+
+	case token.LBrace:
+		n = p.blockBody(tok)
+
 	default:
 		p.lexer.Buffer(tok)
-		n = p.expr(powerNil)
+		n = &node.Block{}
 	}
 
 	return n
+}
+
+func (p *Parser) ifBody(tok token.Token) *node.If {
+	condition := p.expr(powerSet)
+	consequent := p.block()
+	antecedent := node.Stmt(&node.Block{})
+
+	if p.lexer.Read(token.Else) {
+		switch tok := p.lexer.Next(); tok.Kind {
+		case token.LBrace:
+			antecedent = p.blockBody(tok)
+		case token.If:
+			antecedent = p.ifBody(tok)
+		}
+	}
+
+	return &node.If{
+		Token:      tok,
+		Condition:  condition,
+		Antecedent: antecedent,
+		Consequent: consequent,
+	}
+}
+
+func (p *Parser) block() *node.Block {
+	brace := p.lexer.Next()
+	if brace.Kind != token.LBrace {
+		errorUnexpected(p.lexer.Peek())
+	}
+
+	return p.blockBody(brace)
+}
+
+func (p *Parser) blockBody(tok token.Token) *node.Block {
+	block := []node.Stmt{}
+
+	for !p.lexer.Read(token.RBrace) {
+		block = append(block, p.stmt())
+	}
+
+	return &node.Block{
+		Token: tok,
+		Stmts: block,
+	}
 }
 
 func (p *Parser) File(lexer lexer.Lexer) {

@@ -18,6 +18,11 @@ func (c *Compiler) valueNew() string {
 	return fmt.Sprintf("%%%d", c.valueId-1)
 }
 
+func (c *Compiler) labelNew() string {
+	c.valueId++
+	return fmt.Sprintf("L%d", c.valueId-1)
+}
+
 func (c *Compiler) binaryOp(n *node.Binary, op string) string {
 	lhs := c.expr(n.Lhs)
 	rhs := c.expr(n.Rhs)
@@ -86,6 +91,43 @@ func (c *Compiler) stmt(n node.Node) {
 		operand := c.expr(n.Operand)
 		c.valueNew()
 		fmt.Fprintf(c.out, "    call i32 (ptr, ...) @printf(ptr @.print, i64 %s)\n", operand)
+
+	case *node.Block:
+		for _, stmt := range n.Stmts {
+			c.stmt(stmt)
+		}
+
+	case *node.If:
+		conditionName := c.valueNew()
+		consequentName := c.labelNew()
+		antecendentName := c.labelNew()
+		confluenceName := c.labelNew()
+		condition := c.expr(n.Condition)
+		fmt.Fprintf(c.out, "    %s = icmp ne i32 %s, 0\n", conditionName, condition)
+		fmt.Fprintf(c.out, "    br i1 %s, label %%%s, label %%%s\n", conditionName, consequentName, antecendentName)
+		fmt.Fprintf(c.out, "%s:\n", consequentName)
+		c.stmt(n.Consequent)
+		fmt.Fprintf(c.out, "    br label %%%s\n", confluenceName)
+		fmt.Fprintf(c.out, "%s:\n", antecendentName)
+		c.stmt(n.Antecedent)
+		fmt.Fprintf(c.out, "    br label %%%s\n", confluenceName)
+		fmt.Fprintf(c.out, "%s:\n", confluenceName)
+
+	case *node.While:
+		conditionName := c.valueNew()
+		startName := c.labelNew()
+		bodyName := c.labelNew()
+		finallyName := c.labelNew()
+
+		fmt.Fprintf(c.out, "    br label %%%s\n", startName)
+		fmt.Fprintf(c.out, "%s:\n", startName)
+		condition := c.expr(n.Condition)
+		fmt.Fprintf(c.out, "    %s = icmp ne i32 %s, 0\n", conditionName, condition)
+		fmt.Fprintf(c.out, "    br i1 %s, label %%%s, label %%%s\n", conditionName, bodyName, finallyName)
+		fmt.Fprintf(c.out, "%s:\n", bodyName)
+		c.stmt(n.Body)
+		fmt.Fprintf(c.out, "    br label %%%s\n", startName)
+		fmt.Fprintf(c.out, "%s:\n", finallyName)
 
 	default:
 		c.expr(n)

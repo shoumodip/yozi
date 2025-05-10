@@ -25,7 +25,15 @@ const (
 	Mul
 	Div
 
+	LBrace
+	RBrace
+
+	If
+	Else
+	While
+
 	Print
+
 	COUNT
 )
 
@@ -41,6 +49,12 @@ var Names = [COUNT]string{
 	Mul: "'*'",
 	Div: "'/'",
 
+	LBrace: "'{'",
+	RBrace: "'}'",
+
+	If:    "'if'",
+	Else:  "'else'",
+	While: "'while",
 	Print: "'print'",
 }
 

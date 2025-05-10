@@ -70,6 +70,10 @@ func Check(n node.Node) {
 		Check(n.Operand)
 		typeAssertArith(n.Operand)
 
+	case *node.Block:
+	case *node.If:
+	case *node.While:
+
 	default:
 		panic("unreachable")
 	}
