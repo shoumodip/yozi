@@ -87,6 +87,11 @@ func (c *Compiler) stmt(n node.Node) {
 		c.valueNew()
 		fmt.Fprintf(c.out, "    call i32 (ptr, ...) @printf(ptr @.print, i64 %s)\n", operand)
 
+	case *node.Block:
+		for _, stmt := range n.Stmts {
+			c.stmt(stmt)
+		}
+
 	default:
 		c.expr(n)
 	}

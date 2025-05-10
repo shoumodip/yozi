@@ -79,8 +79,8 @@ func (p *Parser) expr(mbp int) node.Node {
 }
 
 // @TokenKind
-func (p *Parser) stmt() node.Node {
-	var n node.Node
+func (p *Parser) stmt() node.Stmt {
+	var n node.Stmt
 
 	switch tok := p.lexer.Next(); tok.Kind {
 	case token.Print:
@@ -89,9 +89,21 @@ func (p *Parser) stmt() node.Node {
 			Operand: p.expr(powerSet),
 		}
 
+	case token.LBrace:
+		block := []node.Stmt{}
+
+		for !p.lexer.Read(token.RBrace) {
+			block = append(block, p.stmt())
+		}
+
+		n = &node.Block{
+			Token: tok,
+			Stmts: block,
+		}
+
 	default:
 		p.lexer.Buffer(tok)
-		n = p.expr(powerNil)
+		n = &node.Block{}
 	}
 
 	return n

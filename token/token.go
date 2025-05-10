@@ -25,6 +25,9 @@ const (
 	Mul
 	Div
 
+	LBrace
+	RBrace
+
 	Print
 	COUNT
 )
@@ -40,6 +43,9 @@ var Names = [COUNT]string{
 	Sub: "'-'",
 	Mul: "'*'",
 	Div: "'/'",
+
+	LBrace: "'{'",
+	RBrace: "'}'",
 
 	Print: "'print'",
 }

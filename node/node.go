@@ -14,6 +14,11 @@ type Node interface {
 	Debug(w io.Writer, depth int) // @Temporary
 }
 
+type Stmt interface {
+	Node
+	stmt()
+}
+
 type Atom struct {
 	Token token.Token
 	Type  Type
@@ -110,6 +115,8 @@ func (p *Print) SetType(t Type) {
 	p.Type = t
 }
 
+func (p *Print) stmt() {}
+
 // @Temporary
 func (p Print) Debug(w io.Writer, depth int) {
 	writeIndent(w, depth)
@@ -119,4 +126,36 @@ func (p Print) Debug(w io.Writer, depth int) {
 
 func writeIndent(w io.Writer, depth int) {
 	fmt.Fprintf(w, "%*s", depth*4, "")
+}
+
+type Block struct {
+	Token token.Token
+	Type  Type
+
+	Stmts []Stmt
+}
+
+func (b *Block) Literal() token.Token {
+	return b.Token
+}
+
+func (b *Block) GetType() Type {
+	return b.Type
+}
+
+func (b *Block) SetType(t Type) {
+	b.Type = t
+}
+
+func (b *Block) stmt() {}
+
+// @Temporary
+func (b Block) Debug(w io.Writer, depth int) {
+	writeIndent(w, depth)
+	fmt.Fprintln(w, "{")
+	for _, stmt := range b.Stmts {
+		stmt.Debug(w, depth+1)
+	}
+	writeIndent(w, depth)
+	fmt.Fprintln(w, "}")
 }
