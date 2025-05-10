@@ -10,6 +10,7 @@ import (
 
 type Compiler struct {
 	out     *os.File
+	labelId int
 	valueId int
 }
 
@@ -19,8 +20,8 @@ func (c *Compiler) valueNew() string {
 }
 
 func (c *Compiler) labelNew() string {
-	c.valueId++
-	return fmt.Sprintf("L%d", c.valueId-1)
+	c.labelId++
+	return fmt.Sprintf("L%d", c.labelId-1)
 }
 
 func (c *Compiler) binaryOp(n *node.Binary, op string) string {
@@ -93,7 +94,7 @@ func (c *Compiler) stmt(n node.Node) {
 		fmt.Fprintf(c.out, "    call i32 (ptr, ...) @printf(ptr @.print, i64 %s)\n", operand)
 
 	case *node.Block:
-		for _, stmt := range n.Stmts {
+		for _, stmt := range n.Body {
 			c.stmt(stmt)
 		}
 

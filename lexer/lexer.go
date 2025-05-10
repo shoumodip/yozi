@@ -3,6 +3,7 @@ package lexer
 import (
 	"fmt"
 	"os"
+	"slices"
 	"strconv"
 	"yozi/token"
 )
@@ -247,4 +248,28 @@ func (l *Lexer) Read(kind token.Kind) bool {
 	l.Peek()
 	l.peeked = l.buffer.Kind != kind
 	return !l.peeked
+}
+
+func (l *Lexer) Expect(kinds ...token.Kind) token.Token {
+	tok := l.Next()
+	if slices.Contains(kinds, tok.Kind) {
+		return tok
+	}
+
+	fmt.Fprintf(os.Stderr, "%s: ERROR: Expected ", tok.Pos)
+	for i, kind := range kinds {
+		if i > 0 {
+			if i == len(kinds)-1 {
+				fmt.Fprint(os.Stderr, " or ")
+			} else {
+				fmt.Fprint(os.Stderr, ", ")
+			}
+		}
+
+		fmt.Fprint(os.Stderr, token.Names[kind])
+	}
+	fmt.Fprintln(os.Stderr, ", got", token.Names[tok.Kind])
+	os.Exit(1)
+
+	panic("unreachable")
 }

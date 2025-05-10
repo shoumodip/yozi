@@ -71,7 +71,7 @@ func Check(n node.Node) {
 		typeAssertArith(n.Operand)
 
 	case *node.Block:
-		for _, it := range n.Stmts {
+		for _, it := range n.Body {
 			Check(it)
 		}
 

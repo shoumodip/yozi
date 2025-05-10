@@ -36,8 +36,8 @@ type Parser struct {
 }
 
 // @TokenKind
-func (p *Parser) expr(mbp int) node.Expr {
-	var n node.Expr
+func (p *Parser) expr(mbp int) node.Node {
+	var n node.Node
 
 	tok := p.lexer.Next()
 	switch tok.Kind {
@@ -79,8 +79,8 @@ func (p *Parser) expr(mbp int) node.Expr {
 }
 
 // @TokenKind
-func (p *Parser) stmt() node.Stmt {
-	var n node.Stmt
+func (p *Parser) stmt() node.Node {
+	var n node.Node
 
 	switch tok := p.lexer.Next(); tok.Kind {
 	case token.Print:
@@ -107,7 +107,7 @@ func (p *Parser) stmt() node.Stmt {
 
 	default:
 		p.lexer.Buffer(tok)
-		n = &node.Block{}
+		n = p.expr(powerNil)
 	}
 
 	return n
@@ -116,14 +116,18 @@ func (p *Parser) stmt() node.Stmt {
 func (p *Parser) ifBody(tok token.Token) *node.If {
 	condition := p.expr(powerSet)
 	consequent := p.block()
-	antecedent := node.Stmt(&node.Block{})
+	antecedent := node.Node(&node.Block{})
 
 	if p.lexer.Read(token.Else) {
-		switch tok := p.lexer.Next(); tok.Kind {
+		switch tok := p.lexer.Expect(token.LBrace, token.If); tok.Kind {
 		case token.LBrace:
 			antecedent = p.blockBody(tok)
+
 		case token.If:
 			antecedent = p.ifBody(tok)
+
+		default:
+			panic("unreachable")
 		}
 	}
 
@@ -136,16 +140,12 @@ func (p *Parser) ifBody(tok token.Token) *node.If {
 }
 
 func (p *Parser) block() *node.Block {
-	brace := p.lexer.Next()
-	if brace.Kind != token.LBrace {
-		errorUnexpected(p.lexer.Peek())
-	}
-
+	brace := p.lexer.Expect(token.LBrace)
 	return p.blockBody(brace)
 }
 
 func (p *Parser) blockBody(tok token.Token) *node.Block {
-	block := []node.Stmt{}
+	block := []node.Node{}
 
 	for !p.lexer.Read(token.RBrace) {
 		block = append(block, p.stmt())
@@ -153,7 +153,7 @@ func (p *Parser) blockBody(tok token.Token) *node.Block {
 
 	return &node.Block{
 		Token: tok,
-		Stmts: block,
+		Body:  block,
 	}
 }
 

@@ -14,16 +14,6 @@ type Node interface {
 	Debug(w io.Writer, depth int) // @Temporary
 }
 
-type Expr interface {
-	Node
-	expr()
-}
-
-type Stmt interface {
-	Node
-	stmt()
-}
-
 type Atom struct {
 	Token token.Token
 	Type  Type
@@ -40,8 +30,6 @@ func (a *Atom) GetType() Type {
 func (a *Atom) SetType(t Type) {
 	a.Type = t
 }
-
-func (a *Atom) expr() {}
 
 // @Temporary
 func (a Atom) Debug(w io.Writer, depth int) {
@@ -67,8 +55,6 @@ func (u *Unary) GetType() Type {
 func (u *Unary) SetType(t Type) {
 	u.Type = t
 }
-
-func (u *Unary) expr() {}
 
 // @Temporary
 func (u Unary) Debug(w io.Writer, depth int) {
@@ -97,8 +83,6 @@ func (b *Binary) SetType(t Type) {
 	b.Type = t
 }
 
-func (b *Binary) expr() {}
-
 // @Temporary
 func (b Binary) Debug(w io.Writer, depth int) {
 	writeIndent(w, depth)
@@ -126,8 +110,6 @@ func (p *Print) SetType(t Type) {
 	p.Type = t
 }
 
-func (p *Print) stmt() {}
-
 // @Temporary
 func (p Print) Debug(w io.Writer, depth int) {
 	writeIndent(w, depth)
@@ -135,17 +117,13 @@ func (p Print) Debug(w io.Writer, depth int) {
 	p.Operand.Debug(w, depth+1)
 }
 
-func writeIndent(w io.Writer, depth int) {
-	fmt.Fprintf(w, "%*s", depth*4, "")
-}
-
 type If struct {
 	Token token.Token
 	Type  Type
 
-	Condition  Expr
-	Consequent Stmt
-	Antecedent Stmt
+	Condition  Node
+	Consequent Node
+	Antecedent Node
 }
 
 func (i *If) Literal() token.Token {
@@ -160,23 +138,21 @@ func (i *If) SetType(t Type) {
 	i.Type = t
 }
 
-func (i *If) stmt() {}
-
+// @Temporary
 func (i *If) Debug(w io.Writer, depth int) {
 	writeIndent(w, depth)
-	fmt.Fprint(w, "if ")
-	i.Condition.Debug(w, 0)
-	i.Consequent.Debug(w, depth)
-	fmt.Fprint(w, "else ")
-	i.Antecedent.Debug(w, depth)
+	fmt.Fprintln(w, "If")
+	i.Condition.Debug(w, depth+1)
+	i.Consequent.Debug(w, depth+1)
+	i.Antecedent.Debug(w, depth+1)
 }
 
 type While struct {
 	Token token.Token
 	Type  Type
 
-	Condition Expr
-	Body      Stmt
+	Condition Node
+	Body      Node
 }
 
 func (l *While) Literal() token.Token {
@@ -191,20 +167,19 @@ func (l *While) SetType(t Type) {
 	l.Type = t
 }
 
-func (l *While) stmt() {}
-
+// @Temporary
 func (l *While) Debug(w io.Writer, depth int) {
 	writeIndent(w, depth)
-	fmt.Fprint(w, "while ")
-	l.Condition.Debug(w, 0)
-	l.Body.Debug(w, depth)
+	fmt.Fprintln(w, "While")
+	l.Condition.Debug(w, depth+1)
+	l.Body.Debug(w, depth+1)
 }
 
 type Block struct {
 	Token token.Token
 	Type  Type
 
-	Stmts []Stmt
+	Body []Node
 }
 
 func (b *Block) Literal() token.Token {
@@ -219,15 +194,15 @@ func (b *Block) SetType(t Type) {
 	b.Type = t
 }
 
-func (b *Block) stmt() {}
-
 // @Temporary
 func (b Block) Debug(w io.Writer, depth int) {
 	writeIndent(w, depth)
-	fmt.Fprintln(w, "{")
-	for _, stmt := range b.Stmts {
+	fmt.Fprintln(w, "Block")
+	for _, stmt := range b.Body {
 		stmt.Debug(w, depth+1)
 	}
-	writeIndent(w, depth)
-	fmt.Fprintln(w, "}")
+}
+
+func writeIndent(w io.Writer, depth int) {
+	fmt.Fprintf(w, "%*s", depth*4, "")
 }

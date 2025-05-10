@@ -1,4 +1,4 @@
 // TODO: better test when we have variables
-while 0 {
+while false {
     print 1
 }
