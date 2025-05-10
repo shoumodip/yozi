@@ -72,6 +72,7 @@ func Check(n node.Node) {
 
 	case *node.Block:
 	case *node.If:
+	case *node.While:
 
 	default:
 		panic("unreachable")

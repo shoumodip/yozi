@@ -171,6 +171,35 @@ func (i *If) Debug(w io.Writer, depth int) {
 	i.Antecedent.Debug(w, depth)
 }
 
+type While struct {
+	Token token.Token
+	Type  Type
+
+	Condition Expr
+	Body      Stmt
+}
+
+func (l *While) Literal() token.Token {
+	return l.Token
+}
+
+func (l *While) GetType() Type {
+	return l.Type
+}
+
+func (l *While) SetType(t Type) {
+	l.Type = t
+}
+
+func (l *While) stmt() {}
+
+func (l *While) Debug(w io.Writer, depth int) {
+	writeIndent(w, depth)
+	fmt.Fprint(w, "while ")
+	l.Condition.Debug(w, 0)
+	l.Body.Debug(w, depth)
+}
+
 type Block struct {
 	Token token.Token
 	Type  Type

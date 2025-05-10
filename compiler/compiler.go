@@ -108,6 +108,22 @@ func (c *Compiler) stmt(n node.Node) {
 		fmt.Fprintf(c.out, "    br label %%%s\n", confluenceName)
 		fmt.Fprintf(c.out, "%s:\n", confluenceName)
 
+	case *node.While:
+		conditionName := c.valueNew()
+		startName := "L" + c.valueNew()[1:]
+		bodyName := "L" + c.valueNew()[1:]
+		finallyName := "L" + c.valueNew()[1:]
+
+		fmt.Fprintf(c.out, "    br label %%%s\n", startName)
+		fmt.Fprintf(c.out, "%s:\n", startName)
+		condition := c.expr(n.Condition)
+		fmt.Fprintf(c.out, "    %s = icmp ne i32 %s, 0\n", conditionName, condition)
+		fmt.Fprintf(c.out, "    br i1 %s, label %%%s, label %%%s\n", conditionName, bodyName, finallyName)
+		fmt.Fprintf(c.out, "%s:\n", bodyName)
+		c.stmt(n.Body)
+		fmt.Fprintf(c.out, "    br label %%%s\n", startName)
+		fmt.Fprintf(c.out, "%s:\n", finallyName)
+
 	default:
 		c.expr(n)
 	}

@@ -1,0 +1,4 @@
+// TODO: better test when we have variables
+while 0 {
+    print 1
+}

@@ -1,4 +1,4 @@
-:i count 3
+:i count 4
 :b shell 25
 ../yozi -r arithmetics.yo
 :i returncode 0
@@ -27,6 +27,13 @@
 :i returncode 0
 :b stdout 2
 2
+
+:b stderr 0
+
+:b shell 18
+../yozi -r loop.yo
+:i returncode 0
+:b stdout 0
 
 :b stderr 0
 

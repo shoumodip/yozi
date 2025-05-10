@@ -189,6 +189,9 @@ func (l *Lexer) Next() token.Token {
 		case "else":
 			tok.Kind = token.Else
 
+		case "while":
+			tok.Kind = token.While
+
 		default:
 			tok.Kind = token.Ident
 		}

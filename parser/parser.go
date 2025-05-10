@@ -91,6 +91,17 @@ func (p *Parser) stmt() node.Stmt {
 
 	case token.If:
 		n = p.ifBody(tok)
+
+	case token.While:
+		condition := p.expr(powerSet)
+		body := p.block()
+
+		n = &node.While{
+			Token:     tok,
+			Condition: condition,
+			Body:      body,
+		}
+
 	case token.LBrace:
 		n = p.blockBody(tok)
 

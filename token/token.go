@@ -30,6 +30,7 @@ const (
 
 	If
 	Else
+	While
 
 	Print
 
@@ -53,6 +54,7 @@ var Names = [COUNT]string{
 
 	If:    "'if'",
 	Else:  "'else'",
+	While: "'while",
 	Print: "'print'",
 }
 

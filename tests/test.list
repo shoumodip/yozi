@@ -1,3 +1,4 @@
 ../yozi -r arithmetics.yo
 ../yozi -r block.yo
 ../yozi -r condition.yo
+../yozi -r loop.yo
