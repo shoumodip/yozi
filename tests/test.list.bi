@@ -1,4 +1,4 @@
-:i count 15
+:i count 17
 :b testcase 14
 arithmetics.yo
 :i returncode 0
@@ -93,6 +93,16 @@ global-variables/definition.yo
 
 :b stderr 0
 
+:b testcase 36
+global-variables/definition-forms.yo
+:i returncode 0
+:b stdout 12
+69
+420
+1337
+
+:b stderr 0
+
 :b testcase 30
 global-variables/assignment.yo
 :i returncode 0
@@ -134,6 +144,14 @@ global-variables/error-assignment-not-memory.yo
 
 :b stderr 97
 global-variables/error-assignment-not-memory.yo:1:1: ERROR: Cannot assign to value not in memory
+
+:b testcase 70
+global-variables/error-assignment-does-not-match-type-in-definition.yo
+:i returncode 1
+:b stdout 0
+
+:b stderr 112
+global-variables/error-assignment-does-not-match-type-in-definition.yo:1:14: ERROR: Expected type bool, got i64
 
 :b testcase 33
 pointers/reference-dereference.yo

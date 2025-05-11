@@ -60,6 +60,30 @@ func NewContext() Context {
 	}
 }
 
+func (c *Context) checkType(n node.Node) {
+	switch n := n.(type) {
+	case *node.Atom:
+		switch n.Token.Str {
+		case "i64":
+			n.Type = node.Type{Kind: node.TypeI64}
+
+		case "bool":
+			n.Type = node.Type{Kind: node.TypeBool}
+
+		default:
+			errorUndefined(n, "type")
+		}
+
+	case *node.Unary:
+		c.checkType(n.Operand)
+		n.Type = n.Operand.GetType()
+		n.Type.Ref++
+
+	default:
+		panic("unreachable")
+	}
+}
+
 // @NodeKind
 func (c *Context) Check(n node.Node) {
 	switch n := n.(type) {
@@ -198,8 +222,20 @@ func (c *Context) Check(n node.Node) {
 			errorRedefinition(n, previous, "global identifier")
 		}
 
-		c.Check(n.Assign)
-		n.Type = n.Assign.GetType()
+		if n.DefType != nil {
+			c.checkType(n.DefType)
+			n.Type = n.DefType.GetType()
+		}
+
+		if n.Assign != nil {
+			c.Check(n.Assign)
+			if n.DefType != nil {
+				typeAssert(n.Assign, n.Type)
+			} else {
+				n.Type = n.Assign.GetType()
+			}
+		}
+
 		c.Globals[n.Token.Str] = n
 
 	default:

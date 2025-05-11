@@ -245,9 +245,11 @@ func (c *Compiler) stmt(n node.Node) {
 		fmt.Fprintf(c.out, "%s:\n", finally)
 
 	case *node.Let:
-		assign := c.expr(n.Assign, false)
-		llvmType := llvmFormatType(n.GetType())
-		fmt.Fprintf(c.out, "    store %s %s, %s* @%s\n", llvmType, assign, llvmType, n.Literal().Str)
+		if n.Assign != nil {
+			assign := c.expr(n.Assign, false)
+			llvmType := llvmFormatType(n.GetType())
+			fmt.Fprintf(c.out, "    store %s %s, %s* @%s\n", llvmType, assign, llvmType, n.Literal().Str)
+		}
 
 	default:
 		c.expr(n, false)
