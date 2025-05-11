@@ -4,11 +4,13 @@ block.yo
 condition.yo
 loop.yo
 global-variables/definition.yo
+global-variables/definition-forms.yo
 global-variables/assignment.yo
 global-variables/error-undefined.yo
 global-variables/error-redefinition.yo
 global-variables/error-assignment-undefined.yo
 global-variables/error-assignment-not-memory.yo
+global-variables/error-assignment-does-not-match-type-in-definition.yo
 pointers/reference-dereference.yo
 pointers/reference-dereference-multiple.yo
 pointers/error-dereference-expected-pointer.yo

@@ -53,7 +53,29 @@ type Parser struct {
 }
 
 // @TokenKind
-func (p *Parser) expr(mbp int) node.Node {
+func (p *Parser) parseType() node.Node {
+	tok := p.lexer.Next()
+	switch tok.Kind {
+	case token.Ident:
+		return &node.Atom{
+			Token: tok,
+		}
+
+	case token.BAnd:
+		return &node.Unary{
+			Token:   tok,
+			Operand: p.parseType(),
+		}
+
+	default:
+		errorUnexpected(tok)
+	}
+
+	panic("unreachable")
+}
+
+// @TokenKind
+func (p *Parser) parseExpr(mbp int) node.Node {
 	var n node.Node
 
 	tok := p.lexer.Next()
@@ -66,7 +88,7 @@ func (p *Parser) expr(mbp int) node.Node {
 	case token.Sub, token.Mul, token.BAnd, token.BNot, token.LNot:
 		n = &node.Unary{
 			Token:   tok,
-			Operand: p.expr(powerPre),
+			Operand: p.parseExpr(powerPre),
 		}
 
 	default:
@@ -88,7 +110,7 @@ func (p *Parser) expr(mbp int) node.Node {
 		n = &node.Binary{
 			Token: tok,
 			Lhs:   n,
-			Rhs:   p.expr(lbp),
+			Rhs:   p.parseExpr(lbp),
 		}
 	}
 
@@ -96,20 +118,39 @@ func (p *Parser) expr(mbp int) node.Node {
 }
 
 // @TokenKind
-func (p *Parser) stmt() node.Node {
+func (p *Parser) parseStmt() node.Node {
 	switch tok := p.lexer.Next(); tok.Kind {
 	case token.Print:
 		return &node.Print{
 			Token:   tok,
-			Operand: p.expr(powerSet),
+			Operand: p.parseExpr(powerSet),
 		}
 
 	case token.If:
-		return p.ifBody(tok)
+		condition := p.parseExpr(powerSet)
+
+		p.lexer.Buffer(p.lexer.Expect(token.LBrace))
+		consequent := p.parseStmt()
+
+		antecedent := node.Node(&node.Block{})
+
+		if p.lexer.Read(token.Else) {
+			p.lexer.Buffer(p.lexer.Expect(token.LBrace, token.If))
+			antecedent = p.parseStmt()
+		}
+
+		return &node.If{
+			Token:      tok,
+			Condition:  condition,
+			Antecedent: antecedent,
+			Consequent: consequent,
+		}
 
 	case token.While:
-		condition := p.expr(powerSet)
-		body := p.block()
+		condition := p.parseExpr(powerSet)
+
+		p.lexer.Buffer(p.lexer.Expect(token.LBrace))
+		body := p.parseStmt()
 
 		return &node.While{
 			Token:     tok,
@@ -119,65 +160,33 @@ func (p *Parser) stmt() node.Node {
 
 	case token.Let:
 		name := p.lexer.Expect(token.Ident)
+		let := node.Let{Token: name}
 
-		p.lexer.Expect(token.Set) // TODO: Implement definition by type
-		value := p.expr(powerSet)
-
-		return &node.Let{
-			Token:  name,
-			Assign: value,
+		if p.lexer.Read(token.Set) {
+			let.Assign = p.parseExpr(powerSet)
+		} else {
+			let.DefType = p.parseType()
+			if p.lexer.Read(token.Set) {
+				let.Assign = p.parseExpr(powerSet)
+			}
 		}
 
+		return &let
+
 	case token.LBrace:
-		return p.blockBody(tok)
+		body := []node.Node{}
+		for !p.lexer.Read(token.RBrace) {
+			body = append(body, p.parseStmt())
+		}
+
+		return &node.Block{
+			Token: tok,
+			Body:  body,
+		}
 
 	default:
 		p.lexer.Buffer(tok)
-		return p.expr(powerNil)
-	}
-}
-
-func (p *Parser) ifBody(tok token.Token) *node.If {
-	condition := p.expr(powerSet)
-	consequent := p.block()
-	antecedent := node.Node(&node.Block{})
-
-	if p.lexer.Read(token.Else) {
-		switch tok := p.lexer.Expect(token.LBrace, token.If); tok.Kind {
-		case token.LBrace:
-			antecedent = p.blockBody(tok)
-
-		case token.If:
-			antecedent = p.ifBody(tok)
-
-		default:
-			panic("unreachable")
-		}
-	}
-
-	return &node.If{
-		Token:      tok,
-		Condition:  condition,
-		Antecedent: antecedent,
-		Consequent: consequent,
-	}
-}
-
-func (p *Parser) block() *node.Block {
-	brace := p.lexer.Expect(token.LBrace)
-	return p.blockBody(brace)
-}
-
-func (p *Parser) blockBody(tok token.Token) *node.Block {
-	block := []node.Node{}
-
-	for !p.lexer.Read(token.RBrace) {
-		block = append(block, p.stmt())
-	}
-
-	return &node.Block{
-		Token: tok,
-		Body:  block,
+		return p.parseExpr(powerNil)
 	}
 }
 
@@ -189,7 +198,7 @@ func (p *Parser) File(lexer lexer.Lexer) {
 
 	p.lexer = lexer
 	for !p.lexer.Read(token.Eof) {
-		p.Nodes = append(p.Nodes, p.stmt())
+		p.Nodes = append(p.Nodes, p.parseStmt())
 	}
 	p.lexer = save
 }

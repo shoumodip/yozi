@@ -159,7 +159,11 @@ type Let struct {
 	Token token.Token
 	Type  Type
 
-	Assign Node
+	// let x = <expr>        // Assign = <expr>, DefType = nil
+	// let x <type>          // Assign = nil,    DefType = <type>
+	// let x <type> = <expr> // Assign = <expr>, DefType = <type>
+	Assign  Node
+	DefType Node
 }
 
 func (l *Let) Literal() token.Token {
