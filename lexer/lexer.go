@@ -224,18 +224,28 @@ func (l *Lexer) Next() token.Token {
 	case '/':
 		tok.Kind = token.Div
 
+	case '|':
+		tok.Kind = token.BOr
+
 	case '&':
 		tok.Kind = token.BAnd
 
+	case '~':
+		tok.Kind = token.BNot
+
 	case '<':
-		if l.matchChar('=') {
+		if l.matchChar('<') {
+			tok.Kind = token.Shl
+		} else if l.matchChar('=') {
 			tok.Kind = token.Le
 		} else {
 			tok.Kind = token.Lt
 		}
 
 	case '>':
-		if l.matchChar('=') {
+		if l.matchChar('>') {
+			tok.Kind = token.Shr
+		} else if l.matchChar('=') {
 			tok.Kind = token.Ge
 		} else {
 			tok.Kind = token.Gt
@@ -252,7 +262,7 @@ func (l *Lexer) Next() token.Token {
 		if l.matchChar('=') {
 			tok.Kind = token.Ne
 		} else {
-			panic("TODO: logical negation is not implemented")
+			tok.Kind = token.LNot
 		}
 
 	case '{':

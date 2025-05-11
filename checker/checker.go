@@ -126,6 +126,14 @@ func (c *Context) Check(n node.Node) {
 			n.Type = n.Operand.GetType()
 			n.Type.Ref++
 
+		case token.BNot:
+			c.Check(n.Operand)
+			n.Type = typeAssertArith(n.Operand)
+
+		case token.LNot:
+			c.Check(n.Operand)
+			n.Type = typeAssert(n.Operand, node.Type{Kind: node.TypeBool})
+
 		default:
 			panic("unreachable")
 		}
@@ -134,6 +142,12 @@ func (c *Context) Check(n node.Node) {
 		// @TokenKind
 		switch n.Literal().Kind {
 		case token.Add, token.Sub, token.Mul, token.Div:
+			c.Check(n.Lhs)
+			c.Check(n.Rhs)
+			n.Type = typeAssert(n.Rhs, typeAssertArith(n.Lhs))
+
+		// These only work on integers, whereas the standard arithmetics branch can also work on floats
+		case token.Shl, token.Shr, token.BOr, token.BAnd:
 			c.Check(n.Lhs)
 			c.Check(n.Rhs)
 			n.Type = typeAssert(n.Rhs, typeAssertArith(n.Lhs))

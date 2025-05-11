@@ -1,8 +1,8 @@
-:i count 14
+:i count 15
 :b shell 44
 ../yozi -r -o arithmetics.exe arithmetics.yo
 :i returncode 0
-:b stdout 49
+:b stdout 70
 69
 420
 69
@@ -24,6 +24,23 @@
 0
 1
 0
+69
+420
+69
+420
+69
+420
+
+:b stderr 0
+
+:b shell 38
+../yozi -r -o booleans.exe booleans.yo
+:i returncode 0
+:b stdout 8
+1
+0
+0
+1
 
 :b stderr 0
 
