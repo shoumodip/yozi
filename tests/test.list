@@ -15,3 +15,6 @@ pointers/reference-dereference.yo
 pointers/reference-dereference-multiple.yo
 pointers/error-dereference-expected-pointer.yo
 pointers/error-reference-not-memory.yo
+functions/no-arguments-no-return.yo
+functions/no-arguments-no-return-first-class.yo
+functions/error-not-a-function.yo

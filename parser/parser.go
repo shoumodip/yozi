@@ -17,6 +17,7 @@ const (
 	powerBor
 	powerMul
 	powerPre
+	powerDot
 )
 
 // @TokenKind
@@ -40,6 +41,8 @@ var tokenPowers = [token.COUNT]int{
 	token.Le: powerCmp,
 	token.Eq: powerCmp,
 	token.Ne: powerCmp,
+
+	token.LParen: powerDot,
 }
 
 func errorUnexpected(tok token.Token) {
@@ -66,6 +69,13 @@ func (p *Parser) parseType() node.Node {
 		return &node.Unary{
 			Token:   tok,
 			Operand: p.parseType(),
+		}
+
+	case token.Fn:
+		p.lexer.Expect(token.LParen)
+		p.lexer.Expect(token.RParen) // TODO: Function arguments and return
+		return &node.Fn{
+			Token: tok,
 		}
 
 	default:
@@ -112,10 +122,20 @@ func (p *Parser) parseExpr(mbp int) node.Node {
 		}
 		p.lexer.Unbuffer()
 
-		n = &node.Binary{
-			Token: tok,
-			Lhs:   n,
-			Rhs:   p.parseExpr(lbp),
+		switch tok.Kind {
+		case token.LParen:
+			p.lexer.Expect(token.RParen) // TODO: Arguments
+			n = &node.Call{
+				Token: tok,
+				Fn:    n,
+			}
+
+		default:
+			n = &node.Binary{
+				Token: tok,
+				Lhs:   n,
+				Rhs:   p.parseExpr(lbp),
+			}
 		}
 	}
 

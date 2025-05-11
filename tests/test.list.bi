@@ -1,4 +1,4 @@
-:i count 17
+:i count 20
 :b testcase 14
 arithmetics.yo
 :i returncode 0
@@ -192,4 +192,34 @@ pointers/error-reference-not-memory.yo
 
 :b stderr 96
 pointers/error-reference-not-memory.yo:2:6: ERROR: Cannot take reference of value not in memory
+
+:b testcase 35
+functions/no-arguments-no-return.yo
+:i returncode 0
+:b stdout 14
+69
+420
+69
+420
+
+:b stderr 0
+
+:b testcase 47
+functions/no-arguments-no-return-first-class.yo
+:i returncode 0
+:b stdout 14
+69
+420
+69
+420
+
+:b stderr 0
+
+:b testcase 33
+functions/error-not-a-function.yo
+:i returncode 1
+:b stdout 0
+
+:b stderr 73
+functions/error-not-a-function.yo:2:5: ERROR: Expected function, got i64
 

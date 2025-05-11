@@ -79,6 +79,10 @@ func (c *Context) checkType(n node.Node) {
 		n.Type = n.Operand.GetType()
 		n.Type.Ref++
 
+	case *node.Fn:
+		// TODO: Function arguments and return
+		n.Type = node.Type{Kind: node.TypeFn}
+
 	default:
 		panic("unreachable")
 	}
@@ -88,10 +92,8 @@ func (c *Context) checkType(n node.Node) {
 func (c *Context) Check(n node.Node) {
 	switch n := n.(type) {
 	case *node.Atom:
-		literal := n.Literal()
-
 		// @TokenKind
-		switch literal.Kind {
+		switch n.Token.Kind {
 		case token.Int:
 			n.Type = node.Type{Kind: node.TypeI64}
 
@@ -99,7 +101,7 @@ func (c *Context) Check(n node.Node) {
 			n.Type = (node.Type{Kind: node.TypeBool})
 
 		case token.Ident:
-			if defined, ok := c.Globals[literal.Str]; ok {
+			if defined, ok := c.Globals[n.Token.Str]; ok {
 				n.Defined = defined
 				n.Type = defined.GetType()
 				n.Memory = true
@@ -111,9 +113,24 @@ func (c *Context) Check(n node.Node) {
 			panic("unreachable")
 		}
 
+	case *node.Call:
+		c.Check(n.Fn)
+		fnType := n.Fn.GetType()
+		if fnType.Kind != node.TypeFn {
+			fmt.Fprintf(
+				os.Stderr,
+				"%s: ERROR: Expected function, got %s\n",
+				n.Fn.Literal().Pos,
+				fnType,
+			)
+			os.Exit(1)
+		}
+
+		n.Type = node.Type{Kind: node.TypeNil} // TODO: Function return
+
 	case *node.Unary:
 		// @TokenKind
-		switch n.Literal().Kind {
+		switch n.Token.Kind {
 		case token.Sub:
 			c.Check(n.Operand)
 			n.Type = typeAssertArith(n.Operand)
@@ -164,7 +181,7 @@ func (c *Context) Check(n node.Node) {
 
 	case *node.Binary:
 		// @TokenKind
-		switch n.Literal().Kind {
+		switch n.Token.Kind {
 		case token.Add, token.Sub, token.Mul, token.Div:
 			c.Check(n.Lhs)
 			c.Check(n.Rhs)

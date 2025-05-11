@@ -33,6 +33,29 @@ func (a *Atom) IsMemory() bool {
 	return a.Memory
 }
 
+type Call struct {
+	Token token.Token
+	Type  Type
+
+	Fn Node
+}
+
+func (c *Call) Literal() token.Token {
+	return c.Token
+}
+
+func (c *Call) GetType() Type {
+	return c.Type
+}
+
+func (c *Call) SetType(t Type) {
+	c.Type = t
+}
+
+func (*Call) IsMemory() bool {
+	return false
+}
+
 type Unary struct {
 	Token token.Token
 	Type  Type
@@ -102,7 +125,7 @@ func (p *Print) SetType(t Type) {
 	p.Type = t
 }
 
-func (_ *Print) IsMemory() bool {
+func (*Print) IsMemory() bool {
 	return false
 }
 
@@ -127,7 +150,7 @@ func (i *If) SetType(t Type) {
 	i.Type = t
 }
 
-func (_ *If) IsMemory() bool {
+func (*If) IsMemory() bool {
 	return false
 }
 
@@ -151,7 +174,7 @@ func (w *While) SetType(t Type) {
 	w.Type = t
 }
 
-func (_ *While) IsMemory() bool {
+func (*While) IsMemory() bool {
 	return false
 }
 

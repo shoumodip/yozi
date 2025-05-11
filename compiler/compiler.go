@@ -32,6 +32,9 @@ func llvmFormatType(t node.Type) string {
 	case node.TypeNil:
 		panic("unreachable")
 
+	case node.TypeFn:
+		sb.WriteString("void ()*")
+
 	default:
 		panic("unreachable")
 	}
@@ -66,31 +69,40 @@ func (c *Compiler) binaryOp(n *node.Binary, op string) string {
 func (c *Compiler) compileExpr(n node.Node, ref bool) string {
 	switch n := n.(type) {
 	case *node.Atom:
-		literal := n.Literal()
-
 		// @TokenKind
-		switch literal.Kind {
+		switch n.Token.Kind {
 		case token.Int, token.Bool:
-			return fmt.Sprintf("%d", literal.I64)
+			return fmt.Sprintf("%d", n.Token.I64)
 
 		case token.Ident:
+			if _, ok := n.Defined.(*node.Fn); ok {
+				ref = true
+			}
+
+			// TODO: Local variables
 			if ref {
-				return fmt.Sprintf("@%s", n.Literal().Str)
+				return fmt.Sprintf("@%s", n.Token.Str)
 			}
 
 			llvmType := llvmFormatType(n.GetType())
 			result := c.valueNew()
 
-			fmt.Fprintf(c.out, "    %s = load %s, %s* @%s\n", result, llvmType, llvmType, n.Literal().Str)
+			fmt.Fprintf(c.out, "    %s = load %s, %s* @%s\n", result, llvmType, llvmType, n.Token.Str)
 			return result
 
 		default:
 			panic("unreachable")
 		}
 
+	case *node.Call:
+		fn := c.compileExpr(n.Fn, false)
+		// TODO: Function arguments and return
+		fmt.Fprintf(c.out, "    call void() %s()\n", fn)
+		return ""
+
 	case *node.Unary:
 		// @TokenKind
-		switch n.Literal().Kind {
+		switch n.Token.Kind {
 		case token.Sub:
 			operand := c.compileExpr(n.Operand, false)
 			result := c.valueNew()
@@ -131,7 +143,7 @@ func (c *Compiler) compileExpr(n node.Node, ref bool) string {
 
 	case *node.Binary:
 		// @TokenKind
-		switch n.Literal().Kind {
+		switch n.Token.Kind {
 		case token.Add:
 			return c.binaryOp(n, "add")
 
@@ -254,10 +266,11 @@ func (c *Compiler) compileStmt(n node.Node) {
 		fmt.Fprintf(c.out, "%s:\n", finally)
 
 	case *node.Let:
+		// FIXME: This doesn't work if the variable was defined and assigned in the global scope
 		if n.Assign != nil {
 			assign := c.compileExpr(n.Assign, false)
 			llvmType := llvmFormatType(n.GetType())
-			fmt.Fprintf(c.out, "    store %s %s, %s* @%s\n", llvmType, assign, llvmType, n.Literal().Str)
+			fmt.Fprintf(c.out, "    store %s %s, %s* @%s\n", llvmType, assign, llvmType, n.Token.Str)
 		}
 
 	default:
@@ -295,8 +308,10 @@ func Program(context *checker.Context, exePath string) {
 	}
 
 	for _, g := range compiler.context.Globals {
-		globalType := g.GetType()
+		compiler.valueId = 0
+		compiler.labelId = 0
 
+		globalType := g.GetType()
 		switch g := g.(type) {
 		case *node.Fn:
 			name := g.Token.Str
@@ -322,7 +337,7 @@ func Program(context *checker.Context, exePath string) {
 				llvmFormatType(globalType),
 			)
 
-			if globalType.Ref != 0 {
+			if globalType.Ref != 0 || globalType.Kind == node.TypeFn {
 				fmt.Fprintf(compiler.out, "null\n")
 			} else {
 				fmt.Fprintf(compiler.out, "0\n")
