@@ -139,40 +139,39 @@ func (c *Compiler) stmt(n node.Node) {
 		}
 
 	case *node.If:
-		conditionName := c.valueNew()
-		consequentName := c.labelNew()
-		antecendentName := c.labelNew()
-		confluenceName := c.labelNew()
+		consequent := c.labelNew()
+		antecendent := c.labelNew()
+		confluence := c.labelNew()
 
-		// TODO: condition is already a boolean
 		condition := c.expr(n.Condition, false)
-		fmt.Fprintf(c.out, "    %s = icmp ne i32 %s, 0\n", conditionName, condition)
-		fmt.Fprintf(c.out, "    br i1 %s, label %%%s, label %%%s\n", conditionName, consequentName, antecendentName)
-		fmt.Fprintf(c.out, "%s:\n", consequentName)
+		fmt.Fprintf(c.out, "    br i1 %s, label %%%s, label %%%s\n", condition, consequent, antecendent)
+
+		fmt.Fprintf(c.out, "%s:\n", consequent)
 		c.stmt(n.Consequent)
-		fmt.Fprintf(c.out, "    br label %%%s\n", confluenceName)
-		fmt.Fprintf(c.out, "%s:\n", antecendentName)
+		fmt.Fprintf(c.out, "    br label %%%s\n", confluence)
+
+		fmt.Fprintf(c.out, "%s:\n", antecendent)
 		c.stmt(n.Antecedent)
-		fmt.Fprintf(c.out, "    br label %%%s\n", confluenceName)
-		fmt.Fprintf(c.out, "%s:\n", confluenceName)
+		fmt.Fprintf(c.out, "    br label %%%s\n", confluence)
+
+		fmt.Fprintf(c.out, "%s:\n", confluence)
 
 	case *node.While:
-		conditionName := c.valueNew()
-		startName := c.labelNew()
-		bodyName := c.labelNew()
-		finallyName := c.labelNew()
+		start := c.labelNew()
+		body := c.labelNew()
+		finally := c.labelNew()
 
-		fmt.Fprintf(c.out, "    br label %%%s\n", startName)
-		fmt.Fprintf(c.out, "%s:\n", startName)
+		fmt.Fprintf(c.out, "    br label %%%s\n", start)
+		fmt.Fprintf(c.out, "%s:\n", start)
 
-		// TODO: condition is already a boolean
 		condition := c.expr(n.Condition, false)
-		fmt.Fprintf(c.out, "    %s = icmp ne i32 %s, 0\n", conditionName, condition)
-		fmt.Fprintf(c.out, "    br i1 %s, label %%%s, label %%%s\n", conditionName, bodyName, finallyName)
-		fmt.Fprintf(c.out, "%s:\n", bodyName)
+		fmt.Fprintf(c.out, "    br i1 %s, label %%%s, label %%%s\n", condition, body, finally)
+
+		fmt.Fprintf(c.out, "%s:\n", body)
 		c.stmt(n.Body)
-		fmt.Fprintf(c.out, "    br label %%%s\n", startName)
-		fmt.Fprintf(c.out, "%s:\n", finallyName)
+		fmt.Fprintf(c.out, "    br label %%%s\n", start)
+
+		fmt.Fprintf(c.out, "%s:\n", finally)
 
 	case *node.Let:
 		assign := c.expr(n.Assign, false)
