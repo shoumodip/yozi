@@ -2,12 +2,28 @@
 :b shell 44
 ../yozi -r -o arithmetics.exe arithmetics.yo
 :i returncode 0
-:b stdout 17
+:b stdout 49
 69
 420
 69
 420
 69
+1
+0
+0
+1
+1
+0
+1
+0
+0
+1
+1
+0
+1
+0
+1
+0
 
 :b stderr 0
 

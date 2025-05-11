@@ -27,6 +27,16 @@ func typeAssertArith(n node.Node) node.Type {
 	return actual
 }
 
+func typeAssertScalar(n node.Node) node.Type {
+	actual := n.GetType()
+	if actual.Kind != node.TypeBool && actual.Kind != node.TypeI64 {
+		fmt.Fprintf(os.Stderr, "%s: ERROR: Expected scalar type, got %s\n", n.Literal().Pos, actual)
+		os.Exit(1)
+	}
+
+	return actual
+}
+
 func errorUndefined(n node.Node, label string) {
 	literal := n.Literal()
 	fmt.Fprintf(os.Stderr, "%s: ERROR: Undefined %s '%s'\n", literal.Pos, label, literal.Str)
@@ -107,13 +117,19 @@ func (c *Context) Check(n node.Node) {
 			typeAssert(n.Rhs, n.Lhs.GetType())
 			n.Type = node.Type{Kind: node.TypeNil}
 
+		case token.Gt, token.Ge, token.Lt, token.Le, token.Eq, token.Ne:
+			c.Check(n.Lhs)
+			c.Check(n.Rhs)
+			typeAssert(n.Rhs, typeAssertArith(n.Lhs))
+			n.Type = node.Type{Kind: node.TypeBool}
+
 		default:
 			panic("unreachable")
 		}
 
 	case *node.Print:
 		c.Check(n.Operand)
-		typeAssertArith(n.Operand)
+		typeAssertScalar(n.Operand)
 
 	case *node.Block:
 		for _, it := range n.Body {

@@ -27,6 +27,13 @@ const (
 
 	Set
 
+	Gt
+	Ge
+	Lt
+	Le
+	Eq
+	Ne
+
 	LBrace
 	RBrace
 
@@ -53,6 +60,13 @@ var Names = [COUNT]string{
 	Div: "'/'",
 
 	Set: "'='",
+
+	Gt: "'>'",
+	Ge: "'>='",
+	Lt: "'<'",
+	Le: "'<='",
+	Eq: "'=='",
+	Ne: "'!='",
 
 	LBrace: "'{'",
 	RBrace: "'}'",
