@@ -1,0 +1,24 @@
+let a = 69
+let b = 420
+
+let y = &a
+let z = &y
+
+print a
+print b
+
+*y = 420
+
+print a
+print b
+
+*z = &b
+*y = 69
+
+print a
+print b
+
+**z = 1337
+
+print a
+print b

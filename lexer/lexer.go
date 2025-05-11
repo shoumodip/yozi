@@ -214,19 +214,18 @@ func (l *Lexer) Next() token.Token {
 	switch ch := l.readChar(); ch {
 	case '+':
 		tok.Kind = token.Add
-		break
 
 	case '-':
 		tok.Kind = token.Sub
-		break
 
 	case '*':
 		tok.Kind = token.Mul
-		break
 
 	case '/':
 		tok.Kind = token.Div
-		break
+
+	case '&':
+		tok.Kind = token.BAnd
 
 	case '<':
 		if l.matchChar('=') {
@@ -248,7 +247,6 @@ func (l *Lexer) Next() token.Token {
 		} else {
 			tok.Kind = token.Set
 		}
-		break
 
 	case '!':
 		if l.matchChar('=') {

@@ -19,7 +19,7 @@ func typeAssert(n node.Node, expected node.Type) node.Type {
 
 func typeAssertArith(n node.Node) node.Type {
 	actual := n.GetType()
-	if actual.Kind != node.TypeI64 {
+	if actual.Kind != node.TypeI64 && actual.Ref == 0 {
 		fmt.Fprintf(os.Stderr, "%s: ERROR: Expected arithmetic type, got %s\n", n.Literal().Pos, actual)
 		os.Exit(1)
 	}
@@ -29,7 +29,7 @@ func typeAssertArith(n node.Node) node.Type {
 
 func typeAssertScalar(n node.Node) node.Type {
 	actual := n.GetType()
-	if actual.Kind != node.TypeBool && actual.Kind != node.TypeI64 {
+	if actual.Kind != node.TypeBool && actual.Kind != node.TypeI64 && actual.Ref == 0 {
 		fmt.Fprintf(os.Stderr, "%s: ERROR: Expected scalar type, got %s\n", n.Literal().Pos, actual)
 		os.Exit(1)
 	}
@@ -93,6 +93,38 @@ func (c *Context) Check(n node.Node) {
 		case token.Sub:
 			c.Check(n.Operand)
 			n.Type = typeAssertArith(n.Operand)
+
+		case token.Mul:
+			c.Check(n.Operand)
+
+			operandType := n.Operand.GetType()
+			if operandType.Ref == 0 {
+				fmt.Fprintf(
+					os.Stderr,
+					"%s: ERROR: Expected pointer, got %s\n",
+					n.Operand.Literal().Pos,
+					operandType,
+				)
+				os.Exit(1)
+			}
+
+			n.Type = operandType
+			n.Type.Ref--
+			n.Memory = true
+
+		case token.BAnd:
+			c.Check(n.Operand)
+			if !n.Operand.IsMemory() {
+				fmt.Fprintf(
+					os.Stderr,
+					"%s: ERROR: Cannot take reference of value not in memory\n",
+					n.Operand.Literal().Pos,
+				)
+				os.Exit(1)
+			}
+
+			n.Type = n.Operand.GetType()
+			n.Type.Ref++
 
 		default:
 			panic("unreachable")

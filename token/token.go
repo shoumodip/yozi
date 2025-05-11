@@ -25,6 +25,8 @@ const (
 	Mul
 	Div
 
+	BAnd
+
 	Set
 
 	Gt
@@ -58,6 +60,8 @@ var Names = [COUNT]string{
 	Sub: "'-'",
 	Mul: "'*'",
 	Div: "'/'",
+
+	BAnd: "'&'",
 
 	Set: "'='",
 
