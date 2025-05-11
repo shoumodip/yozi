@@ -1,4 +1,5 @@
-// TODO: better test when we have variables
-while false {
-    print 1
+let i = 0
+while i < 10 {
+    print i
+    i = i + 1
 }

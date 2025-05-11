@@ -1,18 +1,12 @@
 package node
 
-import (
-	"fmt"
-	"io"
-	"yozi/token"
-)
+import "yozi/token"
 
 type Node interface {
 	Literal() token.Token
 	GetType() Type
 	SetType(t Type)
 	IsMemory() bool
-
-	Debug(w io.Writer, depth int) // @Temporary
 }
 
 type Atom struct {
@@ -39,12 +33,6 @@ func (a *Atom) IsMemory() bool {
 	return a.Memory
 }
 
-// @Temporary
-func (a Atom) Debug(w io.Writer, depth int) {
-	writeIndent(w, depth)
-	fmt.Fprintf(w, "Atom '%s'\n", a.Token.Str)
-}
-
 type Unary struct {
 	Token token.Token
 	Type  Type
@@ -67,13 +55,6 @@ func (u *Unary) SetType(t Type) {
 
 func (u *Unary) IsMemory() bool {
 	return u.Memory
-}
-
-// @Temporary
-func (u Unary) Debug(w io.Writer, depth int) {
-	writeIndent(w, depth)
-	fmt.Fprintln(w, "Unary")
-	u.Operand.Debug(w, depth+1)
 }
 
 type Binary struct {
@@ -102,14 +83,6 @@ func (b *Binary) IsMemory() bool {
 	return b.Memory
 }
 
-// @Temporary
-func (b Binary) Debug(w io.Writer, depth int) {
-	writeIndent(w, depth)
-	fmt.Fprintln(w, "Binary")
-	b.Lhs.Debug(w, depth+1)
-	b.Rhs.Debug(w, depth+1)
-}
-
 type Print struct {
 	Token token.Token
 	Type  Type
@@ -131,13 +104,6 @@ func (p *Print) SetType(t Type) {
 
 func (_ *Print) IsMemory() bool {
 	return false
-}
-
-// @Temporary
-func (p Print) Debug(w io.Writer, depth int) {
-	writeIndent(w, depth)
-	fmt.Fprintln(w, "Print")
-	p.Operand.Debug(w, depth+1)
 }
 
 type If struct {
@@ -165,15 +131,6 @@ func (_ *If) IsMemory() bool {
 	return false
 }
 
-// @Temporary
-func (i *If) Debug(w io.Writer, depth int) {
-	writeIndent(w, depth)
-	fmt.Fprintln(w, "If")
-	i.Condition.Debug(w, depth+1)
-	i.Consequent.Debug(w, depth+1)
-	i.Antecedent.Debug(w, depth+1)
-}
-
 type While struct {
 	Token token.Token
 	Type  Type
@@ -196,14 +153,6 @@ func (w *While) SetType(t Type) {
 
 func (_ *While) IsMemory() bool {
 	return false
-}
-
-// @Temporary
-func (l *While) Debug(w io.Writer, depth int) {
-	writeIndent(w, depth)
-	fmt.Fprintln(w, "While")
-	l.Condition.Debug(w, depth+1)
-	l.Body.Debug(w, depth+1)
 }
 
 type Let struct {
@@ -229,13 +178,6 @@ func (_ *Let) IsMemory() bool {
 	return false
 }
 
-// @Temporary
-func (l *Let) Debug(w io.Writer, depth int) {
-	writeIndent(w, depth)
-	fmt.Fprintf(w, "Let '%s'\n", l.Token.Str)
-	l.Assign.Debug(w, depth+1)
-}
-
 type Block struct {
 	Token token.Token
 	Type  Type
@@ -257,17 +199,4 @@ func (b *Block) SetType(t Type) {
 
 func (_ *Block) IsMemory() bool {
 	return false
-}
-
-// @Temporary
-func (b Block) Debug(w io.Writer, depth int) {
-	writeIndent(w, depth)
-	fmt.Fprintln(w, "Block")
-	for _, stmt := range b.Body {
-		stmt.Debug(w, depth+1)
-	}
-}
-
-func writeIndent(w io.Writer, depth int) {
-	fmt.Fprintf(w, "%*s", depth*4, "")
 }

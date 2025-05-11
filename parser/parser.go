@@ -11,6 +11,7 @@ import (
 const (
 	powerNil = iota
 	powerSet
+	powerCmp
 	powerAdd
 	powerMul
 	powerPre
@@ -25,6 +26,13 @@ var tokenPowers = [token.COUNT]int{
 	token.Div: powerMul,
 
 	token.Set: powerSet,
+
+	token.Gt: powerCmp,
+	token.Ge: powerCmp,
+	token.Lt: powerCmp,
+	token.Le: powerCmp,
+	token.Eq: powerCmp,
+	token.Ne: powerCmp,
 }
 
 func errorUnexpected(tok token.Token) {

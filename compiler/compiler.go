@@ -50,7 +50,7 @@ func (c *Compiler) binaryOp(n *node.Binary, op string) string {
 	rhs := c.expr(n.Rhs, false)
 	result := c.valueNew()
 
-	fmt.Fprintf(c.out, "    %s = %s i64 %s, %s\n", result, op, lhs, rhs)
+	fmt.Fprintf(c.out, "    %s = %s %s %s, %s\n", result, op, typeToLLVM(n.Lhs.GetType()), lhs, rhs)
 	return result
 }
 
@@ -116,6 +116,24 @@ func (c *Compiler) expr(n node.Node, ref bool) string {
 			fmt.Fprintf(c.out, "    store %s %s, %s* %s\n", llvmType, rhs, llvmType, lhs)
 			return ""
 
+		case token.Gt:
+			return c.binaryOp(n, "icmp sgt")
+
+		case token.Ge:
+			return c.binaryOp(n, "icmp sge")
+
+		case token.Lt:
+			return c.binaryOp(n, "icmp slt")
+
+		case token.Le:
+			return c.binaryOp(n, "icmp sle")
+
+		case token.Eq:
+			return c.binaryOp(n, "icmp eq")
+
+		case token.Ne:
+			return c.binaryOp(n, "icmp ne")
+
 		default:
 			panic("unreachable")
 		}
@@ -131,7 +149,12 @@ func (c *Compiler) stmt(n node.Node) {
 	case *node.Print:
 		operand := c.expr(n.Operand, false)
 		c.valueNew()
-		fmt.Fprintf(c.out, "    call i32 (ptr, ...) @printf(ptr @.print, i64 %s)\n", operand)
+		fmt.Fprintf(
+			c.out,
+			"    call i32 (ptr, ...) @printf(ptr @.print, %s %s)\n",
+			typeToLLVM(n.Operand.GetType()),
+			operand,
+		)
 
 	case *node.Block:
 		for _, stmt := range n.Body {

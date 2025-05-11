@@ -89,6 +89,14 @@ func (l *Lexer) readChar() byte {
 	return ch
 }
 
+func (l *Lexer) matchChar(ch byte) bool {
+	if l.ch == ch {
+		l.nextChar()
+		return true
+	}
+	return false
+}
+
 func (l *Lexer) skipWhitespace() {
 	for l.head < l.size {
 		switch l.ch {
@@ -220,9 +228,34 @@ func (l *Lexer) Next() token.Token {
 		tok.Kind = token.Div
 		break
 
+	case '<':
+		if l.matchChar('=') {
+			tok.Kind = token.Le
+		} else {
+			tok.Kind = token.Lt
+		}
+
+	case '>':
+		if l.matchChar('=') {
+			tok.Kind = token.Ge
+		} else {
+			tok.Kind = token.Gt
+		}
+
 	case '=':
-		tok.Kind = token.Set
+		if l.matchChar('=') {
+			tok.Kind = token.Eq
+		} else {
+			tok.Kind = token.Set
+		}
 		break
+
+	case '!':
+		if l.matchChar('=') {
+			tok.Kind = token.Ne
+		} else {
+			panic("TODO: logical negation is not implemented")
+		}
 
 	case '{':
 		tok.Kind = token.LBrace
