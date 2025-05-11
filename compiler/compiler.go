@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strings"
 	"yozi/checker"
 	"yozi/node"
 	"yozi/token"
@@ -19,20 +20,27 @@ type Compiler struct {
 
 // @Temporary
 // @TypeKind
-func typeToLLVM(t node.Type) string {
+func llvmFormatType(t node.Type) string {
+	sb := strings.Builder{}
 	switch t.Kind {
-	case node.TypeNil:
-		panic("unreachable")
-
 	case node.TypeBool:
-		return "i1"
+		sb.WriteString("i1")
 
 	case node.TypeI64:
-		return "i64"
+		sb.WriteString("i64")
+
+	case node.TypeNil:
+		panic("unreachable")
 
 	default:
 		panic("unreachable")
 	}
+
+	for range t.Ref {
+		sb.WriteByte('*')
+	}
+
+	return sb.String()
 }
 
 func (c *Compiler) valueNew() string {
@@ -50,7 +58,7 @@ func (c *Compiler) binaryOp(n *node.Binary, op string) string {
 	rhs := c.expr(n.Rhs, false)
 	result := c.valueNew()
 
-	fmt.Fprintf(c.out, "    %s = %s %s %s, %s\n", result, op, typeToLLVM(n.Lhs.GetType()), lhs, rhs)
+	fmt.Fprintf(c.out, "    %s = %s %s %s, %s\n", result, op, llvmFormatType(n.Lhs.GetType()), lhs, rhs)
 	return result
 }
 
@@ -70,7 +78,7 @@ func (c *Compiler) expr(n node.Node, ref bool) string {
 				return fmt.Sprintf("@%s", n.Literal().Str)
 			}
 
-			llvmType := typeToLLVM(n.GetType())
+			llvmType := llvmFormatType(n.GetType())
 			result := c.valueNew()
 
 			fmt.Fprintf(c.out, "    %s = load %s, %s* @%s\n", result, llvmType, llvmType, n.Literal().Str)
@@ -88,6 +96,22 @@ func (c *Compiler) expr(n node.Node, ref bool) string {
 			result := c.valueNew()
 			fmt.Fprintf(c.out, "    %s = sub i64 0, %s\n", result, operand)
 			return result
+
+		case token.Mul:
+			operand := c.expr(n.Operand, false)
+			if ref {
+				return operand
+			}
+
+			llvmType := llvmFormatType(n.GetType())
+
+			result := c.valueNew()
+			fmt.Fprintf(c.out, "    %s = load %s, %s* %s\n", result, llvmType, llvmType, operand)
+
+			return result
+
+		case token.BAnd:
+			return c.expr(n.Operand, true)
 
 		default:
 			panic("unreachable")
@@ -112,7 +136,7 @@ func (c *Compiler) expr(n node.Node, ref bool) string {
 			lhs := c.expr(n.Lhs, true)
 			rhs := c.expr(n.Rhs, false)
 
-			llvmType := typeToLLVM(n.Lhs.GetType())
+			llvmType := llvmFormatType(n.Lhs.GetType())
 			fmt.Fprintf(c.out, "    store %s %s, %s* %s\n", llvmType, rhs, llvmType, lhs)
 			return ""
 
@@ -152,7 +176,7 @@ func (c *Compiler) stmt(n node.Node) {
 		fmt.Fprintf(
 			c.out,
 			"    call i32 (ptr, ...) @printf(ptr @.print, %s %s)\n",
-			typeToLLVM(n.Operand.GetType()),
+			llvmFormatType(n.Operand.GetType()),
 			operand,
 		)
 
@@ -198,7 +222,7 @@ func (c *Compiler) stmt(n node.Node) {
 
 	case *node.Let:
 		assign := c.expr(n.Assign, false)
-		llvmType := typeToLLVM(n.GetType())
+		llvmType := llvmFormatType(n.GetType())
 		fmt.Fprintf(c.out, "    store %s %s, %s* @%s\n", llvmType, assign, llvmType, n.Literal().Str)
 
 	default:
@@ -223,8 +247,20 @@ func Program(context *checker.Context, nodes []node.Node, exePath string) {
 	fmt.Fprintln(compiler.out, `@.print = private unnamed_addr constant [5 x i8] c"%ld\0A\00"`)
 	fmt.Fprintln(compiler.out, `declare i32 @printf(ptr, ...)`)
 
-	for _, it := range compiler.context.Globals {
-		fmt.Fprintf(compiler.out, "@%s = global %s 0\n", it.Literal().Str, typeToLLVM(it.GetType()))
+	for _, variable := range compiler.context.Globals {
+		variableType := variable.GetType()
+		fmt.Fprintf(
+			compiler.out,
+			"@%s = global %s ",
+			variable.Literal().Str,
+			llvmFormatType(variableType),
+		)
+
+		if variableType.Ref != 0 {
+			fmt.Fprintf(compiler.out, "null\n")
+		} else {
+			fmt.Fprintf(compiler.out, "0\n")
+		}
 	}
 
 	// @Temporary

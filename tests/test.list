@@ -8,3 +8,7 @@
 ../yozi -r -o global-variables/error-redefinition.exe global-variables/error-redefinition.yo
 ../yozi -r -o global-variables/error-assignment-undefined.exe global-variables/error-assignment-undefined.yo
 ../yozi -r -o global-variables/error-assignment-not-memory.exe global-variables/error-assignment-not-memory.yo
+../yozi -r -o pointers/reference-dereference.exe pointers/reference-dereference.yo
+../yozi -r -o pointers/reference-dereference-multiple.exe pointers/reference-dereference-multiple.yo
+../yozi -r -o pointers/error-dereference-expected-pointer.exe pointers/error-dereference-expected-pointer.yo
+../yozi -r -o pointers/error-reference-not-memory.exe pointers/error-reference-not-memory.yo

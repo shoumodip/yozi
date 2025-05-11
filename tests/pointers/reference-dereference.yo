@@ -1,0 +1,6 @@
+let x = 69
+let p = &x
+
+print x
+*p = 420
+print x

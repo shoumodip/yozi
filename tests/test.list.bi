@@ -1,4 +1,4 @@
-:i count 10
+:i count 14
 :b shell 44
 ../yozi -r -o arithmetics.exe arithmetics.yo
 :i returncode 0
@@ -117,4 +117,44 @@ global-variables/error-assignment-undefined.yo:1:1: ERROR: Undefined identifier 
 
 :b stderr 97
 global-variables/error-assignment-not-memory.yo:1:1: ERROR: Cannot assign to value not in memory
+
+:b shell 82
+../yozi -r -o pointers/reference-dereference.exe pointers/reference-dereference.yo
+:i returncode 0
+:b stdout 7
+69
+420
+
+:b stderr 0
+
+:b shell 100
+../yozi -r -o pointers/reference-dereference-multiple.exe pointers/reference-dereference-multiple.yo
+:i returncode 0
+:b stdout 31
+69
+420
+420
+420
+420
+69
+420
+1337
+
+:b stderr 0
+
+:b shell 108
+../yozi -r -o pointers/error-dereference-expected-pointer.exe pointers/error-dereference-expected-pointer.yo
+:i returncode 1
+:b stdout 0
+
+:b stderr 85
+pointers/error-dereference-expected-pointer.yo:1:2: ERROR: Expected pointer, got i64
+
+:b shell 92
+../yozi -r -o pointers/error-reference-not-memory.exe pointers/error-reference-not-memory.yo
+:i returncode 1
+:b stdout 0
+
+:b stderr 96
+pointers/error-reference-not-memory.yo:1:2: ERROR: Cannot take reference of value not in memory
 

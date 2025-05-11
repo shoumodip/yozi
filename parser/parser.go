@@ -56,7 +56,7 @@ func (p *Parser) expr(mbp int) node.Node {
 			Token: tok,
 		}
 
-	case token.Sub:
+	case token.Sub, token.Mul, token.BAnd:
 		n = &node.Unary{
 			Token:   tok,
 			Operand: p.expr(powerPre),
