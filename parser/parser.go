@@ -127,11 +127,30 @@ func (p *Parser) parseStmt() node.Node {
 		}
 
 	case token.If:
-		return p.ifBody(tok)
+		condition := p.parseExpr(powerSet)
+
+		p.lexer.Buffer(p.lexer.Expect(token.LBrace))
+		consequent := p.parseStmt()
+
+		antecedent := node.Node(&node.Block{})
+
+		if p.lexer.Read(token.Else) {
+			p.lexer.Buffer(p.lexer.Expect(token.LBrace, token.If))
+			antecedent = p.parseStmt()
+		}
+
+		return &node.If{
+			Token:      tok,
+			Condition:  condition,
+			Antecedent: antecedent,
+			Consequent: consequent,
+		}
 
 	case token.While:
 		condition := p.parseExpr(powerSet)
-		body := p.block()
+
+		p.lexer.Buffer(p.lexer.Expect(token.LBrace))
+		body := p.parseStmt()
 
 		return &node.While{
 			Token:     tok,
@@ -155,56 +174,19 @@ func (p *Parser) parseStmt() node.Node {
 		return &let
 
 	case token.LBrace:
-		return p.blockBody(tok)
+		body := []node.Node{}
+		for !p.lexer.Read(token.RBrace) {
+			body = append(body, p.parseStmt())
+		}
+
+		return &node.Block{
+			Token: tok,
+			Body:  body,
+		}
 
 	default:
 		p.lexer.Buffer(tok)
 		return p.parseExpr(powerNil)
-	}
-}
-
-// TODO: move into parseStmt
-func (p *Parser) ifBody(tok token.Token) *node.If {
-	condition := p.parseExpr(powerSet)
-	consequent := p.block()
-	antecedent := node.Node(&node.Block{})
-
-	if p.lexer.Read(token.Else) {
-		switch tok := p.lexer.Expect(token.LBrace, token.If); tok.Kind {
-		case token.LBrace:
-			antecedent = p.blockBody(tok)
-
-		case token.If:
-			antecedent = p.ifBody(tok)
-
-		default:
-			panic("unreachable")
-		}
-	}
-
-	return &node.If{
-		Token:      tok,
-		Condition:  condition,
-		Antecedent: antecedent,
-		Consequent: consequent,
-	}
-}
-
-func (p *Parser) block() *node.Block {
-	brace := p.lexer.Expect(token.LBrace)
-	return p.blockBody(brace)
-}
-
-func (p *Parser) blockBody(tok token.Token) *node.Block {
-	block := []node.Node{}
-
-	for !p.lexer.Read(token.RBrace) {
-		block = append(block, p.parseStmt())
-	}
-
-	return &node.Block{
-		Token: tok,
-		Body:  block,
 	}
 }
 
