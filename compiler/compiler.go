@@ -266,7 +266,6 @@ func (c *Compiler) compileStmt(n node.Node) {
 		fmt.Fprintf(c.out, "%s:\n", finally)
 
 	case *node.Let:
-		// FIXME: This doesn't work if the variable was defined and assigned in the global scope
 		if n.Assign != nil {
 			assign := c.compileExpr(n.Assign, false)
 			llvmType := llvmFormatType(n.GetType())

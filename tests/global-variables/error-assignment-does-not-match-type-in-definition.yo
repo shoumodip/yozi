@@ -1,1 +1,3 @@
-let x bool = 69
+fn main() {
+    let x bool = 69
+}

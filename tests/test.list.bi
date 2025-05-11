@@ -151,7 +151,7 @@ global-variables/error-assignment-does-not-match-type-in-definition.yo
 :b stdout 0
 
 :b stderr 112
-global-variables/error-assignment-does-not-match-type-in-definition.yo:1:14: ERROR: Expected type bool, got i64
+global-variables/error-assignment-does-not-match-type-in-definition.yo:2:18: ERROR: Expected type bool, got i64
 
 :b testcase 33
 pointers/reference-dereference.yo

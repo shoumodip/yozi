@@ -225,13 +225,14 @@ func (p *Parser) parseStmt() node.Node {
 		name := p.lexer.Expect(token.Ident)
 		let := node.Let{Token: name}
 
-		if p.lexer.Read(token.Set) {
-			let.Assign = p.parseExpr(powerSet)
-		} else {
+		if tok := p.lexer.Peek(); tok.Kind != token.Set {
 			let.DefType = p.parseType()
-			if p.lexer.Read(token.Set) {
-				let.Assign = p.parseExpr(powerSet)
-			}
+		}
+
+		if tok := p.lexer.Peek(); tok.Kind == token.Set {
+			p.localAssert(tok, true) // @Temporary: Till we get local variables running
+			p.lexer.Unbuffer()
+			let.Assign = p.parseExpr(powerSet)
 		}
 
 		return &let
