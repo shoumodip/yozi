@@ -199,7 +199,7 @@ func (c *Compiler) compileStmt(n node.Node) {
 		c.valueNew()
 		fmt.Fprintf(
 			c.out,
-			"    call i32 (ptr, ...) @printf(ptr @.print, %s %s)\n",
+			"    call i32 (i8*, ...) @printf(i8* @.print, %s %s)\n",
 			llvmFormatType(n.Operand.GetType()),
 			operand,
 		)
@@ -326,7 +326,7 @@ func Program(context *checker.Context, exePath string) {
 
 	// @Temporary
 	fmt.Fprintln(compiler.out, `@.print = private unnamed_addr constant [5 x i8] c"%ld\0A\00"`)
-	fmt.Fprintln(compiler.out, "declare i32 @printf(ptr, ...)")
+	fmt.Fprintln(compiler.out, "declare i32 @printf(i8*, ...)")
 
 	fmt.Fprintln(compiler.out, "define i32 @main() {")
 	fmt.Fprintln(compiler.out, "$0:")
