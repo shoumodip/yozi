@@ -94,7 +94,7 @@ func (c *Compiler) expr(n node.Node, ref bool) string {
 		case token.Sub:
 			operand := c.expr(n.Operand, false)
 			result := c.valueNew()
-			fmt.Fprintf(c.out, "    %s = sub i64 0, %s\n", result, operand)
+			fmt.Fprintf(c.out, "    %s = sub %s 0, %s\n", result, llvmFormatType(n.Operand.GetType()), operand)
 			return result
 
 		case token.Mul:
@@ -112,6 +112,18 @@ func (c *Compiler) expr(n node.Node, ref bool) string {
 
 		case token.BAnd:
 			return c.expr(n.Operand, true)
+
+		case token.BNot:
+			operand := c.expr(n.Operand, false)
+			result := c.valueNew()
+			fmt.Fprintf(c.out, "    %s = xor %s %s, -1\n", result, llvmFormatType(n.Operand.GetType()), operand)
+			return result
+
+		case token.LNot:
+			operand := c.expr(n.Operand, false)
+			result := c.valueNew()
+			fmt.Fprintf(c.out, "    %s = xor i1 %s, true\n", result, operand)
+			return result
 
 		default:
 			panic("unreachable")
@@ -131,6 +143,18 @@ func (c *Compiler) expr(n node.Node, ref bool) string {
 
 		case token.Div:
 			return c.binaryOp(n, "sdiv")
+
+		case token.Shl:
+			return c.binaryOp(n, "shl")
+
+		case token.Shr:
+			return c.binaryOp(n, "ashr")
+
+		case token.BOr:
+			return c.binaryOp(n, "or")
+
+		case token.BAnd:
+			return c.binaryOp(n, "and")
 
 		case token.Set:
 			lhs := c.expr(n.Lhs, true)

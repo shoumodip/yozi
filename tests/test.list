@@ -1,4 +1,5 @@
 ../yozi -r -o arithmetics.exe arithmetics.yo
+../yozi -r -o booleans.exe booleans.yo
 ../yozi -r -o block.exe block.yo
 ../yozi -r -o condition.exe condition.yo
 ../yozi -r -o loop.exe loop.yo

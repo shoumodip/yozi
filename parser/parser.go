@@ -12,7 +12,9 @@ const (
 	powerNil = iota
 	powerSet
 	powerCmp
+	powerShl
 	powerAdd
+	powerBor
 	powerMul
 	powerPre
 )
@@ -24,6 +26,11 @@ var tokenPowers = [token.COUNT]int{
 
 	token.Mul: powerMul,
 	token.Div: powerMul,
+
+	token.Shl:  powerShl,
+	token.Shr:  powerShl,
+	token.BOr:  powerBor,
+	token.BAnd: powerBor,
 
 	token.Set: powerSet,
 
@@ -56,7 +63,7 @@ func (p *Parser) expr(mbp int) node.Node {
 			Token: tok,
 		}
 
-	case token.Sub, token.Mul, token.BAnd:
+	case token.Sub, token.Mul, token.BAnd, token.BNot, token.LNot:
 		n = &node.Unary{
 			Token:   tok,
 			Operand: p.expr(powerPre),

@@ -25,7 +25,13 @@ const (
 	Mul
 	Div
 
+	Shl
+	Shr
+	BOr
 	BAnd
+	BNot
+
+	LNot
 
 	Set
 
@@ -61,7 +67,13 @@ var Names = [COUNT]string{
 	Mul: "'*'",
 	Div: "'/'",
 
+	Shl:  "'<<'",
+	Shr:  "'>>'",
+	BOr:  "'|'",
 	BAnd: "'&'",
+	BNot: "'~'",
+
+	LNot: "'!'",
 
 	Set: "'='",
 
