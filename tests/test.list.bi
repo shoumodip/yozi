@@ -25,8 +25,11 @@
 :b shell 23
 ../yozi -r condition.yo
 :i returncode 0
-:b stdout 2
+:b stdout 8
+1
 2
+3
+4
 
 :b stderr 0
 
