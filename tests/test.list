@@ -1,15 +1,15 @@
-../yozi -r -o arithmetics.exe arithmetics.yo
-../yozi -r -o booleans.exe booleans.yo
-../yozi -r -o block.exe block.yo
-../yozi -r -o condition.exe condition.yo
-../yozi -r -o loop.exe loop.yo
-../yozi -r -o global-variables/definition.exe global-variables/definition.yo
-../yozi -r -o global-variables/assignment.exe global-variables/assignment.yo
-../yozi -r -o global-variables/error-undefined.exe global-variables/error-undefined.yo
-../yozi -r -o global-variables/error-redefinition.exe global-variables/error-redefinition.yo
-../yozi -r -o global-variables/error-assignment-undefined.exe global-variables/error-assignment-undefined.yo
-../yozi -r -o global-variables/error-assignment-not-memory.exe global-variables/error-assignment-not-memory.yo
-../yozi -r -o pointers/reference-dereference.exe pointers/reference-dereference.yo
-../yozi -r -o pointers/reference-dereference-multiple.exe pointers/reference-dereference-multiple.yo
-../yozi -r -o pointers/error-dereference-expected-pointer.exe pointers/error-dereference-expected-pointer.yo
-../yozi -r -o pointers/error-reference-not-memory.exe pointers/error-reference-not-memory.yo
+arithmetics.yo
+booleans.yo
+block.yo
+condition.yo
+loop.yo
+global-variables/definition.yo
+global-variables/assignment.yo
+global-variables/error-undefined.yo
+global-variables/error-redefinition.yo
+global-variables/error-assignment-undefined.yo
+global-variables/error-assignment-not-memory.yo
+pointers/reference-dereference.yo
+pointers/reference-dereference-multiple.yo
+pointers/error-dereference-expected-pointer.yo
+pointers/error-reference-not-memory.yo

@@ -12,13 +12,7 @@ $ ./rere.py replay test.list
 $ ./rere.py replay test.list
 ```
 
-- Create the test file
-- Add the following to `test.list`
-
-```
-../yozi -r -o FILE.exe FILE.yo
-```
-
+- Create the test file and add it to `test.list`
 - Record the tests
 
 ```

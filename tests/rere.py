@@ -50,13 +50,14 @@ def write_blob_field(f: BinaryIO, name: bytes, blob: bytes):
     f.write(blob)
     f.write(b'\n')
 
-def capture(shell: str, debug=True) -> dict:
+def capture(testcase: str, debug=True) -> dict:
     if debug:
-        print(f"CAPTURING: {shell}")
+        print(f"CAPTURING: {testcase}")
 
-    process = subprocess.run(['sh', '-c', shell], capture_output=True)
+    exepath = testcase.removesuffix(".yo") + ".exe"
+    process = subprocess.run(['../yozi', '-r', '-o', exepath, testcase], capture_output=True)
     return {
-        'shell': shell,
+        'testcase': testcase,
         'returncode': process.returncode,
         'stdout': process.stdout.replace(b'\r\n', b'\n'),
         'stderr': process.stderr.replace(b'\r\n', b'\n'),
@@ -70,7 +71,7 @@ def dump_snapshots(file_path: str, snapshots: list[dict]):
     with open(file_path, "wb") as f:
         write_int_field(f, b"count", len(snapshots))
         for snapshot in snapshots:
-            write_blob_field(f, b"shell", bytes(snapshot['shell'], 'utf-8'))
+            write_blob_field(f, b"testcase", bytes(snapshot['testcase'], 'utf-8'))
             write_int_field(f, b"returncode", snapshot['returncode'])
             write_blob_field(f, b"stdout", snapshot['stdout'])
             write_blob_field(f, b"stderr", snapshot['stderr'])
@@ -80,12 +81,12 @@ def load_snapshots(file_path: str) -> list[dict]:
     with open(file_path, "rb") as f:
         count = read_int_field(f, b"count")
         for _ in range(count):
-            shell = read_blob_field(f, b"shell")
+            testcase = read_blob_field(f, b"testcase")
             returncode = read_int_field(f, b"returncode")
             stdout = read_blob_field(f, b"stdout")
             stderr = read_blob_field(f, b"stderr")
             snapshot = {
-                "shell": shell,
+                "testcase": testcase,
                 "returncode": returncode,
                 "stdout": stdout,
                 "stderr": stderr,
@@ -109,7 +110,7 @@ if __name__ == '__main__':
             exit(1)
         test_list_path, *argv = argv
 
-        snapshots = [capture(shell.strip()) for shell in load_list(test_list_path)]
+        snapshots = [capture(testcase.strip()) for testcase in load_list(test_list_path)]
         dump_snapshots(f'{test_list_path}.bi', snapshots)
     elif subcommand == 'replay':
         if len(argv) == 0:
@@ -118,26 +119,26 @@ if __name__ == '__main__':
             exit(1)
         test_list_path, *argv = argv
 
-        shells = load_list(test_list_path)
+        testcases = load_list(test_list_path)
         snapshots = load_snapshots(f'{test_list_path}.bi')
 
-        if len(shells) != len(snapshots):
-            print(f"UNEXPECTED: Amount of shell commands in f{test_list_path}")
+        if len(testcases) != len(snapshots):
+            print(f"UNEXPECTED: Amount of test cases in f{test_list_path}")
             print(f"    EXPECTED: {len(snapshots)}")
-            print(f"    ACTUAL:   {len(shells)}")
+            print(f"    ACTUAL:   {len(testcases)}")
             print(f"NOTE: You may want to do `{program_name} record {test_list_path}` to update {test_list_path}.bi")
             exit(1)
 
-        for (shell, snapshot) in zip(shells, snapshots):
-            print(f"REPLAYING: {shell}")
-            snapshot_shell = snapshot['shell'].decode('utf-8')
-            if shell != snapshot_shell:
-                print(f"UNEXPECTED: shell command")
-                print(f"    EXPECTED: {snapshot_shell}")
-                print(f"    ACTUAL:   {shell}")
+        for (testcase, snapshot) in zip(testcases, snapshots):
+            print(f"REPLAYING: {testcase}")
+            snapshot_testcase = snapshot['testcase'].decode('utf-8')
+            if testcase != snapshot_testcase:
+                print(f"UNEXPECTED: test case")
+                print(f"    EXPECTED: {snapshot_testcase}")
+                print(f"    ACTUAL:   {testcase}")
                 print(f"NOTE: You may want to do `{program_name} record {test_list_path}` to update {test_list_path}.bi")
                 exit(1)
-            process = capture(shell, debug=False);
+            process = capture(testcase, debug=False);
             failed = False
             if process['returncode'] != snapshot['returncode']:
                 print(f"UNEXPECTED: return code")

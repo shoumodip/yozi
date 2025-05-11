@@ -1,6 +1,6 @@
 :i count 15
-:b shell 44
-../yozi -r -o arithmetics.exe arithmetics.yo
+:b testcase 14
+arithmetics.yo
 :i returncode 0
 :b stdout 70
 69
@@ -33,8 +33,8 @@
 
 :b stderr 0
 
-:b shell 38
-../yozi -r -o booleans.exe booleans.yo
+:b testcase 11
+booleans.yo
 :i returncode 0
 :b stdout 8
 1
@@ -44,8 +44,8 @@
 
 :b stderr 0
 
-:b shell 32
-../yozi -r -o block.exe block.yo
+:b testcase 8
+block.yo
 :i returncode 0
 :b stdout 8
 3
@@ -55,8 +55,8 @@
 
 :b stderr 0
 
-:b shell 40
-../yozi -r -o condition.exe condition.yo
+:b testcase 12
+condition.yo
 :i returncode 0
 :b stdout 8
 1
@@ -66,8 +66,8 @@
 
 :b stderr 0
 
-:b shell 30
-../yozi -r -o loop.exe loop.yo
+:b testcase 7
+loop.yo
 :i returncode 0
 :b stdout 20
 0
@@ -83,8 +83,8 @@
 
 :b stderr 0
 
-:b shell 76
-../yozi -r -o global-variables/definition.exe global-variables/definition.yo
+:b testcase 30
+global-variables/definition.yo
 :i returncode 0
 :b stdout 12
 69
@@ -93,8 +93,8 @@
 
 :b stderr 0
 
-:b shell 76
-../yozi -r -o global-variables/assignment.exe global-variables/assignment.yo
+:b testcase 30
+global-variables/assignment.yo
 :i returncode 0
 :b stdout 7
 69
@@ -102,16 +102,16 @@
 
 :b stderr 0
 
-:b shell 86
-../yozi -r -o global-variables/error-undefined.exe global-variables/error-undefined.yo
+:b testcase 35
+global-variables/error-undefined.yo
 :i returncode 1
 :b stdout 0
 
 :b stderr 75
 global-variables/error-undefined.yo:1:7: ERROR: Undefined identifier 'foo'
 
-:b shell 92
-../yozi -r -o global-variables/error-redefinition.exe global-variables/error-redefinition.yo
+:b testcase 38
+global-variables/error-redefinition.yo
 :i returncode 1
 :b stdout 0
 
@@ -119,24 +119,24 @@ global-variables/error-undefined.yo:1:7: ERROR: Undefined identifier 'foo'
 global-variables/error-redefinition.yo:2:5: ERROR: Redefinition of global identifier 'x'
 global-variables/error-redefinition.yo:1:5: NOTE: Defined here
 
-:b shell 108
-../yozi -r -o global-variables/error-assignment-undefined.exe global-variables/error-assignment-undefined.yo
+:b testcase 46
+global-variables/error-assignment-undefined.yo
 :i returncode 1
 :b stdout 0
 
 :b stderr 86
 global-variables/error-assignment-undefined.yo:1:1: ERROR: Undefined identifier 'foo'
 
-:b shell 110
-../yozi -r -o global-variables/error-assignment-not-memory.exe global-variables/error-assignment-not-memory.yo
+:b testcase 47
+global-variables/error-assignment-not-memory.yo
 :i returncode 1
 :b stdout 0
 
 :b stderr 97
 global-variables/error-assignment-not-memory.yo:1:1: ERROR: Cannot assign to value not in memory
 
-:b shell 82
-../yozi -r -o pointers/reference-dereference.exe pointers/reference-dereference.yo
+:b testcase 33
+pointers/reference-dereference.yo
 :i returncode 0
 :b stdout 7
 69
@@ -144,8 +144,8 @@ global-variables/error-assignment-not-memory.yo:1:1: ERROR: Cannot assign to val
 
 :b stderr 0
 
-:b shell 100
-../yozi -r -o pointers/reference-dereference-multiple.exe pointers/reference-dereference-multiple.yo
+:b testcase 42
+pointers/reference-dereference-multiple.yo
 :i returncode 0
 :b stdout 31
 69
@@ -159,16 +159,16 @@ global-variables/error-assignment-not-memory.yo:1:1: ERROR: Cannot assign to val
 
 :b stderr 0
 
-:b shell 108
-../yozi -r -o pointers/error-dereference-expected-pointer.exe pointers/error-dereference-expected-pointer.yo
+:b testcase 46
+pointers/error-dereference-expected-pointer.yo
 :i returncode 1
 :b stdout 0
 
 :b stderr 85
 pointers/error-dereference-expected-pointer.yo:1:2: ERROR: Expected pointer, got i64
 
-:b shell 92
-../yozi -r -o pointers/error-reference-not-memory.exe pointers/error-reference-not-memory.yo
+:b testcase 38
+pointers/error-reference-not-memory.yo
 :i returncode 1
 :b stdout 0
 
