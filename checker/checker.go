@@ -27,17 +27,51 @@ func typeAssertArith(n node.Node) node.Type {
 	return actual
 }
 
+func errorUndefined(n node.Node, label string) {
+	literal := n.Literal()
+	fmt.Fprintf(os.Stderr, "%s: ERROR: Undefined %s '%s'\n", literal.Pos, label, literal.Str)
+	os.Exit(1)
+}
+
+func errorRedefinition(n node.Node, prev node.Node, label string) {
+	literal := n.Literal()
+	fmt.Fprintf(os.Stderr, "%s: ERROR: Redefinition of %s '%s'\n", literal.Pos, label, literal.Str)
+	fmt.Fprintf(os.Stderr, "%s: NOTE: Defined here\n", prev.Literal().Pos)
+	os.Exit(1)
+}
+
+type Context struct {
+	Globals map[string]node.Node
+}
+
+func NewContext() Context {
+	return Context{
+		Globals: make(map[string]node.Node),
+	}
+}
+
 // @NodeKind
-func Check(n node.Node) {
+func (c *Context) Check(n node.Node) {
 	switch n := n.(type) {
 	case *node.Atom:
+		literal := n.Literal()
+
 		// @TokenKind
-		switch n.Literal().Kind {
+		switch literal.Kind {
 		case token.Int:
-			n.SetType(node.Type{Kind: node.TypeI64})
+			n.Type = node.Type{Kind: node.TypeI64}
 
 		case token.Bool:
-			n.SetType((node.Type{Kind: node.TypeBool}))
+			n.Type = (node.Type{Kind: node.TypeBool})
+
+		case token.Ident:
+			if defined, ok := c.Globals[literal.Str]; ok {
+				n.Defined = defined
+				n.Type = defined.GetType()
+				n.Memory = true
+			} else {
+				errorUndefined(n, "identifier")
+			}
 
 		default:
 			panic("unreachable")
@@ -47,8 +81,8 @@ func Check(n node.Node) {
 		// @TokenKind
 		switch n.Literal().Kind {
 		case token.Sub:
-			Check(n.Operand)
-			n.SetType(typeAssertArith(n.Operand))
+			c.Check(n.Operand)
+			n.Type = typeAssertArith(n.Operand)
 
 		default:
 			panic("unreachable")
@@ -58,33 +92,53 @@ func Check(n node.Node) {
 		// @TokenKind
 		switch n.Literal().Kind {
 		case token.Add, token.Sub, token.Mul, token.Div:
-			Check(n.Lhs)
-			Check(n.Rhs)
-			n.SetType(typeAssert(n.Rhs, typeAssertArith(n.Lhs)))
+			c.Check(n.Lhs)
+			c.Check(n.Rhs)
+			n.Type = typeAssert(n.Rhs, typeAssertArith(n.Lhs))
+
+		case token.Set:
+			c.Check(n.Lhs)
+			if !n.Lhs.IsMemory() {
+				fmt.Fprintf(os.Stderr, "%s: ERROR: Cannot assign to value not in memory\n", n.Lhs.Literal().Pos)
+				os.Exit(1)
+			}
+
+			c.Check(n.Rhs)
+			typeAssert(n.Rhs, n.Lhs.GetType())
+			n.Type = node.Type{Kind: node.TypeNil}
 
 		default:
 			panic("unreachable")
 		}
 
 	case *node.Print:
-		Check(n.Operand)
+		c.Check(n.Operand)
 		typeAssertArith(n.Operand)
 
 	case *node.Block:
 		for _, it := range n.Body {
-			Check(it)
+			c.Check(it)
 		}
 
 	case *node.If:
-		Check(n.Condition)
+		c.Check(n.Condition)
 		typeAssert(n.Condition, node.Type{Kind: node.TypeBool})
-		Check(n.Consequent)
-		Check(n.Antecedent)
+		c.Check(n.Consequent)
+		c.Check(n.Antecedent)
 
 	case *node.While:
-		Check(n.Condition)
+		c.Check(n.Condition)
 		typeAssert(n.Condition, node.Type{Kind: node.TypeBool})
-		Check(n.Body)
+		c.Check(n.Body)
+
+	case *node.Let:
+		if previous, ok := c.Globals[n.Token.Str]; ok {
+			errorRedefinition(n, previous, "global identifier")
+		}
+
+		c.Check(n.Assign)
+		n.Type = n.Assign.GetType()
+		c.Globals[n.Token.Str] = n
 
 	default:
 		panic("unreachable")

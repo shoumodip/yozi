@@ -23,6 +23,8 @@ var tokenPowers = [token.COUNT]int{
 
 	token.Mul: powerMul,
 	token.Div: powerMul,
+
+	token.Set: powerSet,
 }
 
 func errorUnexpected(tok token.Token) {
@@ -41,7 +43,7 @@ func (p *Parser) expr(mbp int) node.Node {
 
 	tok := p.lexer.Next()
 	switch tok.Kind {
-	case token.Int, token.Bool:
+	case token.Int, token.Bool, token.Ident:
 		n = &node.Atom{
 			Token: tok,
 		}
@@ -80,37 +82,44 @@ func (p *Parser) expr(mbp int) node.Node {
 
 // @TokenKind
 func (p *Parser) stmt() node.Node {
-	var n node.Node
-
 	switch tok := p.lexer.Next(); tok.Kind {
 	case token.Print:
-		n = &node.Print{
+		return &node.Print{
 			Token:   tok,
 			Operand: p.expr(powerSet),
 		}
 
 	case token.If:
-		n = p.ifBody(tok)
+		return p.ifBody(tok)
 
 	case token.While:
 		condition := p.expr(powerSet)
 		body := p.block()
 
-		n = &node.While{
+		return &node.While{
 			Token:     tok,
 			Condition: condition,
 			Body:      body,
 		}
 
+	case token.Let:
+		name := p.lexer.Expect(token.Ident)
+
+		p.lexer.Expect(token.Set) // TODO: Implement definition by type
+		value := p.expr(powerSet)
+
+		return &node.Let{
+			Token:  name,
+			Assign: value,
+		}
+
 	case token.LBrace:
-		n = p.blockBody(tok)
+		return p.blockBody(tok)
 
 	default:
 		p.lexer.Buffer(tok)
-		n = p.expr(powerNil)
+		return p.expr(powerNil)
 	}
-
-	return n
 }
 
 func (p *Parser) ifBody(tok token.Token) *node.If {
