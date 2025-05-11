@@ -44,10 +44,14 @@ const (
 
 	LBrace
 	RBrace
+	LParen
+	RParen
 
 	If
 	Else
 	While
+
+	Fn
 	Let
 
 	Print
@@ -86,11 +90,15 @@ var Names = [COUNT]string{
 
 	LBrace: "'{'",
 	RBrace: "'}'",
+	LParen: "'('",
+	RParen: "')'",
 
 	If:    "'if'",
 	Else:  "'else'",
 	While: "'while",
-	Let:   "'let'",
+
+	Fn:  "'fn'",
+	Let: "'let'",
 
 	Print: "'print'",
 }

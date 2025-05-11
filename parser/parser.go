@@ -49,6 +49,7 @@ func errorUnexpected(tok token.Token) {
 
 type Parser struct {
 	lexer lexer.Lexer
+	local bool
 	Nodes []node.Node
 }
 
@@ -91,6 +92,10 @@ func (p *Parser) parseExpr(mbp int) node.Node {
 			Operand: p.parseExpr(powerPre),
 		}
 
+	case token.LParen:
+		n = p.parseExpr(powerSet)
+		p.lexer.Expect(token.RParen)
+
 	default:
 		errorUnexpected(tok)
 	}
@@ -117,16 +122,36 @@ func (p *Parser) parseExpr(mbp int) node.Node {
 	return n
 }
 
+func (p *Parser) localAssert(tok token.Token, local bool) {
+	if p.local != local {
+		scope := "global"
+		if p.local {
+			scope = "local"
+		}
+
+		fmt.Fprintf(
+			os.Stderr,
+			"%s: ERROR: Unexpected %s in %s scope\n",
+			tok.Pos,
+			token.Names[tok.Kind],
+			scope,
+		)
+		os.Exit(1)
+	}
+}
+
 // @TokenKind
 func (p *Parser) parseStmt() node.Node {
 	switch tok := p.lexer.Next(); tok.Kind {
 	case token.Print:
+		p.localAssert(tok, true)
 		return &node.Print{
 			Token:   tok,
 			Operand: p.parseExpr(powerSet),
 		}
 
 	case token.If:
+		p.localAssert(tok, true)
 		condition := p.parseExpr(powerSet)
 
 		p.lexer.Buffer(p.lexer.Expect(token.LBrace))
@@ -147,6 +172,7 @@ func (p *Parser) parseStmt() node.Node {
 		}
 
 	case token.While:
+		p.localAssert(tok, true)
 		condition := p.parseExpr(powerSet)
 
 		p.lexer.Buffer(p.lexer.Expect(token.LBrace))
@@ -157,6 +183,23 @@ func (p *Parser) parseStmt() node.Node {
 			Condition: condition,
 			Body:      body,
 		}
+
+	case token.Fn:
+		p.localAssert(tok, false) // TODO: Nested functions
+		name := p.lexer.Expect(token.Ident)
+		fn := node.Fn{Token: name}
+
+		p.local = true // TODO: Assuming functions can't be nested
+		{
+			p.lexer.Expect(token.LParen)
+			p.lexer.Expect(token.RParen) // TODO: Function arguments
+
+			p.lexer.Buffer(p.lexer.Expect(token.LBrace)) // TODO: Function return
+			fn.Body = p.parseStmt()
+		}
+		p.local = false
+
+		return &fn
 
 	case token.Let:
 		name := p.lexer.Expect(token.Ident)
@@ -174,6 +217,7 @@ func (p *Parser) parseStmt() node.Node {
 		return &let
 
 	case token.LBrace:
+		p.localAssert(tok, true)
 		body := []node.Node{}
 		for !p.lexer.Read(token.RBrace) {
 			body = append(body, p.parseStmt())
@@ -185,6 +229,7 @@ func (p *Parser) parseStmt() node.Node {
 		}
 
 	default:
+		p.localAssert(tok, true)
 		p.lexer.Buffer(tok)
 		return p.parseExpr(powerNil)
 	}

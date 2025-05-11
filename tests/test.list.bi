@@ -117,8 +117,8 @@ global-variables/error-undefined.yo
 :i returncode 1
 :b stdout 0
 
-:b stderr 75
-global-variables/error-undefined.yo:1:7: ERROR: Undefined identifier 'foo'
+:b stderr 76
+global-variables/error-undefined.yo:2:11: ERROR: Undefined identifier 'foo'
 
 :b testcase 38
 global-variables/error-redefinition.yo
@@ -135,7 +135,7 @@ global-variables/error-assignment-undefined.yo
 :b stdout 0
 
 :b stderr 86
-global-variables/error-assignment-undefined.yo:1:1: ERROR: Undefined identifier 'foo'
+global-variables/error-assignment-undefined.yo:2:5: ERROR: Undefined identifier 'foo'
 
 :b testcase 47
 global-variables/error-assignment-not-memory.yo
@@ -143,7 +143,7 @@ global-variables/error-assignment-not-memory.yo
 :b stdout 0
 
 :b stderr 97
-global-variables/error-assignment-not-memory.yo:1:1: ERROR: Cannot assign to value not in memory
+global-variables/error-assignment-not-memory.yo:2:5: ERROR: Cannot assign to value not in memory
 
 :b testcase 70
 global-variables/error-assignment-does-not-match-type-in-definition.yo
@@ -183,7 +183,7 @@ pointers/error-dereference-expected-pointer.yo
 :b stdout 0
 
 :b stderr 85
-pointers/error-dereference-expected-pointer.yo:1:2: ERROR: Expected pointer, got i64
+pointers/error-dereference-expected-pointer.yo:2:6: ERROR: Expected pointer, got i64
 
 :b testcase 38
 pointers/error-reference-not-memory.yo
@@ -191,5 +191,5 @@ pointers/error-reference-not-memory.yo
 :b stdout 0
 
 :b stderr 96
-pointers/error-reference-not-memory.yo:1:2: ERROR: Cannot take reference of value not in memory
+pointers/error-reference-not-memory.yo:2:6: ERROR: Cannot take reference of value not in memory
 

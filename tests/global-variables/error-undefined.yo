@@ -1,1 +1,3 @@
-print foo
+fn main() {
+    print foo
+}

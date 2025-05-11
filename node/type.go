@@ -8,6 +8,7 @@ const (
 	TypeNil TypeKind = iota
 	TypeBool
 	TypeI64
+	TypeFn
 )
 
 type Type struct {
@@ -31,6 +32,9 @@ func (t Type) String() string {
 
 	case TypeI64:
 		sb.WriteString("i64")
+
+	case TypeFn:
+		sb.WriteString("fn ()")
 	}
 
 	return sb.String()

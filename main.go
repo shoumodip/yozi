@@ -106,7 +106,7 @@ func main() {
 		args.outputPath = strings.TrimSuffix(args.inputPath, ".yo")
 	}
 
-	compiler.Program(&context, parser.Nodes, args.outputPath)
+	compiler.Program(&context, args.outputPath)
 	if args.run {
 		if !strings.HasPrefix(args.outputPath, "/") {
 			args.outputPath = "./" + args.outputPath

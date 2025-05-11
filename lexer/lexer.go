@@ -201,6 +201,9 @@ func (l *Lexer) Next() token.Token {
 		case "while":
 			tok.Kind = token.While
 
+		case "fn":
+			tok.Kind = token.Fn
+
 		case "let":
 			tok.Kind = token.Let
 
@@ -270,6 +273,12 @@ func (l *Lexer) Next() token.Token {
 
 	case '}':
 		tok.Kind = token.RBrace
+
+	case '(':
+		tok.Kind = token.LParen
+
+	case ')':
+		tok.Kind = token.RParen
 
 	default:
 		message := "%s: ERROR: Invalid character '%c'\n"

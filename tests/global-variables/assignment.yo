@@ -1,5 +1,7 @@
-let x = 69
-print x
+fn main() {
+    let x = 69
+    print x
 
-x = 420
-print x
+    x = 420
+    print x
+}

@@ -217,7 +217,18 @@ func (c *Context) Check(n node.Node) {
 		typeAssert(n.Condition, node.Type{Kind: node.TypeBool})
 		c.Check(n.Body)
 
+	case *node.Fn:
+		if previous, ok := c.Globals[n.Token.Str]; ok {
+			errorRedefinition(n, previous, "global identifier")
+		}
+
+		c.Check(n.Body)
+		n.Type = node.Type{Kind: node.TypeFn}
+
+		c.Globals[n.Token.Str] = n
+
 	case *node.Let:
+		// TODO: Local variables
 		if previous, ok := c.Globals[n.Token.Str]; ok {
 			errorRedefinition(n, previous, "global identifier")
 		}

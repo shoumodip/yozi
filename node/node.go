@@ -155,6 +155,29 @@ func (_ *While) IsMemory() bool {
 	return false
 }
 
+type Fn struct {
+	Token token.Token
+	Type  Type
+
+	Body Node
+}
+
+func (f *Fn) Literal() token.Token {
+	return f.Token
+}
+
+func (f *Fn) GetType() Type {
+	return f.Type
+}
+
+func (f *Fn) SetType(t Type) {
+	f.Type = t
+}
+
+func (_ *Fn) IsMemory() bool {
+	return false
+}
+
 type Let struct {
 	Token token.Token
 	Type  Type
