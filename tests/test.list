@@ -1,4 +1,10 @@
-../yozi -r arithmetics.yo
-../yozi -r block.yo
-../yozi -r condition.yo
-../yozi -r loop.yo
+../yozi -r -o arithmetics.exe arithmetics.yo
+../yozi -r -o block.exe block.yo
+../yozi -r -o condition.exe condition.yo
+../yozi -r -o loop.exe loop.yo
+../yozi -r -o global-variables/definition.exe global-variables/definition.yo
+../yozi -r -o global-variables/assignment.exe global-variables/assignment.yo
+../yozi -r -o global-variables/error-undefined.exe global-variables/error-undefined.yo
+../yozi -r -o global-variables/error-redefinition.exe global-variables/error-redefinition.yo
+../yozi -r -o global-variables/error-assignment-undefined.exe global-variables/error-assignment-undefined.yo
+../yozi -r -o global-variables/error-assignment-not-memory.exe global-variables/error-assignment-not-memory.yo

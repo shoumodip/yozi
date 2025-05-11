@@ -193,6 +193,9 @@ func (l *Lexer) Next() token.Token {
 		case "while":
 			tok.Kind = token.While
 
+		case "let":
+			tok.Kind = token.Let
+
 		default:
 			tok.Kind = token.Ident
 		}
@@ -215,6 +218,10 @@ func (l *Lexer) Next() token.Token {
 
 	case '/':
 		tok.Kind = token.Div
+		break
+
+	case '=':
+		tok.Kind = token.Set
 		break
 
 	case '{':

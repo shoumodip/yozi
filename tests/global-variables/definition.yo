@@ -1,0 +1,7 @@
+let first = 69
+print first
+
+let second = 420
+print second
+
+print first + 8 + second * 3

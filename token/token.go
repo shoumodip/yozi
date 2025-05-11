@@ -25,12 +25,15 @@ const (
 	Mul
 	Div
 
+	Set
+
 	LBrace
 	RBrace
 
 	If
 	Else
 	While
+	Let
 
 	Print
 
@@ -49,12 +52,16 @@ var Names = [COUNT]string{
 	Mul: "'*'",
 	Div: "'/'",
 
+	Set: "'='",
+
 	LBrace: "'{'",
 	RBrace: "'}'",
 
 	If:    "'if'",
 	Else:  "'else'",
 	While: "'while",
+	Let:   "'let'",
+
 	Print: "'print'",
 }
 

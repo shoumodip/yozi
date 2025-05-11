@@ -3,7 +3,8 @@ package node
 type TypeKind = byte
 
 const (
-	TypeBool TypeKind = iota
+	TypeNil TypeKind = iota
+	TypeBool
 	TypeI64
 )
 
@@ -14,6 +15,9 @@ type Type struct {
 // @TypeKind
 func (dt Type) String() string {
 	switch dt.Kind {
+	case TypeNil:
+		return "nil"
+
 	case TypeBool:
 		return "bool"
 

@@ -17,21 +17,26 @@ func usage(w io.Writer) {
 	fmt.Fprintln(w, "    yozi [FLAGS] <FILE>")
 	fmt.Fprintln(w)
 	fmt.Fprintln(w, "Flags:")
-	fmt.Fprintln(w, "    -h, -help    Show this help message")
-	fmt.Fprintln(w, "    -r, -run     Run the program after compiling it")
+	fmt.Fprintln(w, "    -h           Show this help message")
+	fmt.Fprintln(w, "    -r           Run the program after compiling it")
+	fmt.Fprintln(w, "    -o <name>    Set the name of the output executable")
 }
 
 type Args struct {
 	run  bool
-	path string
 	rest []string
+
+	inputPath  string
+	outputPath string
 }
 
 func parseArgs() Args {
 	args := Args{
 		run:  false,
-		path: "",
 		rest: os.Args[1:],
+
+		inputPath:  "",
+		outputPath: "",
 	}
 
 	for len(args.rest) != 0 {
@@ -43,8 +48,19 @@ func parseArgs() Args {
 			usage(os.Stdout)
 			os.Exit(0)
 
-		case "-r", "-run", "--run":
+		case "-r":
 			args.run = true
+
+		case "-o":
+			if len(args.rest) == 0 {
+				fmt.Fprintln(os.Stderr, "ERROR: Output file not provided")
+				fmt.Fprintln(os.Stderr)
+				usage(os.Stderr)
+				os.Exit(1)
+			}
+
+			args.outputPath = args.rest[0]
+			args.rest = args.rest[1:]
 
 		default:
 			if strings.HasPrefix(arg, "-") {
@@ -54,7 +70,7 @@ func parseArgs() Args {
 				os.Exit(1)
 			}
 
-			args.path = arg
+			args.inputPath = arg
 			return args
 		}
 	}
@@ -70,9 +86,9 @@ func parseArgs() Args {
 func main() {
 	args := parseArgs()
 
-	lexer, err := lexer.New(args.path)
+	lexer, err := lexer.New(args.inputPath)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "ERROR: Could not open file '"+args.path+"'")
+		fmt.Fprintln(os.Stderr, "ERROR: Could not open file '"+args.inputPath+"'")
 		fmt.Fprintln(os.Stderr)
 		usage(os.Stderr)
 		os.Exit(1)
@@ -81,14 +97,22 @@ func main() {
 	parser := parser.Parser{}
 	parser.File(lexer)
 
+	context := checker.NewContext()
 	for _, node := range parser.Nodes {
-		checker.Check(node)
+		context.Check(node)
 	}
 
-	exePath := strings.TrimSuffix(args.path, ".yo")
-	compiler.Program(parser.Nodes, exePath)
+	if args.outputPath == "" {
+		args.outputPath = strings.TrimSuffix(args.inputPath, ".yo")
+	}
+
+	compiler.Program(&context, parser.Nodes, args.outputPath)
 	if args.run {
-		cmd := exec.Command("./" + exePath)
+		if !strings.HasPrefix(args.outputPath, "/") {
+			args.outputPath = "./" + args.outputPath
+		}
+
+		cmd := exec.Command(args.outputPath)
 		cmd.Stdin = os.Stdin
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
