@@ -52,7 +52,17 @@
 :b shell 30
 ../yozi -r -o loop.exe loop.yo
 :i returncode 0
-:b stdout 0
+:b stdout 20
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
 
 :b stderr 0
 
