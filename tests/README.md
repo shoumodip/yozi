@@ -16,7 +16,7 @@ $ ./rere.py replay test.list
 - Add the following to `test.list`
 
 ```
-../yozi -r <file>
+../yozi -r -o FILE.exe FILE.yo
 ```
 
 - Record the tests
