@@ -196,10 +196,19 @@ func (c *Compiler) compileStmt(n node.Node) {
 	switch n := n.(type) {
 	case *node.Print:
 		operand := c.compileExpr(n.Operand, false)
-		c.valueNew()
+
+		fmtPointer := c.valueNew()
 		fmt.Fprintf(
 			c.out,
-			"    call i32 (i8*, ...) @printf(i8* @.print, %s %s)\n",
+			"    %s = getelementptr [5 x i8], [5 x i8]* @.print, i64 0, i64 0\n",
+			fmtPointer,
+		)
+
+		c.valueNew() // For the call
+		fmt.Fprintf(
+			c.out,
+			"    call i32 (i8*, ...) @printf(i8* %s, %s %s)\n",
+			fmtPointer,
 			llvmFormatType(n.Operand.GetType()),
 			operand,
 		)
