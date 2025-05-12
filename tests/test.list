@@ -34,6 +34,8 @@ functions/yes-arguments-yes-return-first-class.yo
 functions/arguments-as-local-variables.yo
 functions/early-return-unit.yo
 functions/early-return-not-unit.yo
+functions/recursion.yo
+functions/recursion-of-entry-function-main.yo
 functions/error-not-a-function.yo
 functions/error-call-to-function-pointer.yo
 functions/error-direct-reference-to-function.yo

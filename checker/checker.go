@@ -363,6 +363,7 @@ func (c *Context) Check(n node.Node) {
 				c.checkType(n.Return)
 			}
 
+			c.Globals[n.Token.Str] = n
 			c.Check(n.Body)
 
 			if n.Return != nil {
@@ -385,8 +386,6 @@ func (c *Context) Check(n node.Node) {
 			c.locals = c.locals[0:scopeStart]
 		}
 		c.currentFn = nil
-
-		c.Globals[n.Token.Str] = n
 
 	case *node.Let:
 		if n.Kind == node.LetGlobal {

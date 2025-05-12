@@ -1,4 +1,4 @@
-:i count 44
+:i count 46
 :b testcase 14
 arithmetics.yo
 :i returncode 0
@@ -360,6 +360,41 @@ functions/early-return-not-unit.yo
 :i returncode 0
 :b stdout 3
 69
+
+:b stderr 0
+
+:b testcase 22
+functions/recursion.yo
+:i returncode 0
+:b stdout 43
+1
+2
+6
+24
+120
+720
+5040
+40320
+362880
+3628800
+
+:b stderr 0
+
+:b testcase 45
+functions/recursion-of-entry-function-main.yo
+:i returncode 0
+:b stdout 23
+10
+9
+8
+7
+6
+5
+4
+3
+2
+1
+0
 
 :b stderr 0
 
