@@ -1,4 +1,4 @@
-:i count 35
+:i count 37
 :b testcase 14
 arithmetics.yo
 :i returncode 0
@@ -199,6 +199,15 @@ local-variables/shadowing.yo
 
 :b stderr 0
 
+:b testcase 28
+local-variables/reference.yo
+:i returncode 0
+:b stdout 7
+69
+420
+
+:b stderr 0
+
 :b testcase 42
 local-variables/error-use-outside-scope.yo
 :i returncode 1
@@ -308,6 +317,17 @@ functions/yes-arguments-no-return-first-class.yo
 :b stdout 6
 69
 69
+
+:b stderr 0
+
+:b testcase 41
+functions/arguments-as-local-variables.yo
+:i returncode 0
+:b stdout 14
+69
+420
+69
+420
 
 :b stderr 0
 

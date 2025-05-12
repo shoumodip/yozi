@@ -129,6 +129,35 @@ func (c *Context) variableFind(name string) (node.Node, bool) {
 	return global, ok
 }
 
+func checkIfMemory(n node.Node, message string) {
+	if !n.IsMemory() {
+		fmt.Fprintf(os.Stderr, "%s: ERROR: %s\n", n.Literal().Pos, message)
+		os.Exit(1)
+	}
+
+	var checkIfMemoryImpl func(n node.Node)
+	checkIfMemoryImpl = func(n node.Node) {
+		switch n := n.(type) {
+		case *node.Atom:
+			if let, ok := n.Defined.(*node.Let); ok {
+				if let.Kind == node.LetArg {
+					let.Kind = node.LetLocalArg
+				}
+			}
+
+		case *node.Unary:
+			checkIfMemoryImpl(n.Operand)
+
+		case *node.Binary:
+			checkIfMemoryImpl(n.Lhs)
+
+		default:
+			panic("unreachable")
+		}
+	}
+	checkIfMemoryImpl(n)
+}
+
 // @NodeKind
 func (c *Context) Check(n node.Node) {
 	switch n := n.(type) {
@@ -225,14 +254,7 @@ func (c *Context) Check(n node.Node) {
 
 		case token.BAnd:
 			c.Check(n.Operand)
-			if !n.Operand.IsMemory() {
-				fmt.Fprintf(
-					os.Stderr,
-					"%s: ERROR: Cannot take reference of value not in memory\n",
-					n.Operand.Literal().Pos,
-				)
-				os.Exit(1)
-			}
+			checkIfMemory(n.Operand, "Cannot take reference of value not in memory")
 
 			n.Type = n.Operand.GetType()
 			n.Type.Ref++
@@ -265,10 +287,7 @@ func (c *Context) Check(n node.Node) {
 
 		case token.Set:
 			c.Check(n.Lhs)
-			if !n.Lhs.IsMemory() {
-				fmt.Fprintf(os.Stderr, "%s: ERROR: Cannot assign to value not in memory\n", n.Lhs.Literal().Pos)
-				os.Exit(1)
-			}
+			checkIfMemory(n.Lhs, "Cannot assign to value not in memory")
 
 			c.Check(n.Rhs)
 			typeAssert(n.Rhs, n.Lhs.GetType())
@@ -333,7 +352,7 @@ func (c *Context) Check(n node.Node) {
 		c.Globals[n.Token.Str] = n
 
 	case *node.Let:
-		if !n.Local {
+		if n.Kind == node.LetGlobal {
 			if previous, ok := c.Globals[n.Token.Str]; ok {
 				errorRedefinition(n, previous, "global identifier")
 			}
@@ -365,11 +384,11 @@ func (c *Context) Check(n node.Node) {
 			}
 		}
 
-		if n.Local {
+		if n.Kind == node.LetGlobal {
+			c.Globals[n.Token.Str] = n
+		} else {
 			c.locals = append(c.locals, n)
 			c.currentFn.Locals = append(c.currentFn.Locals, n)
-		} else {
-			c.Globals[n.Token.Str] = n
 		}
 
 	default:

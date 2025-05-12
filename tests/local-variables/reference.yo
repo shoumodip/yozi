@@ -1,0 +1,11 @@
+fn foo(x &i64) {
+    *x = 420
+}
+
+fn main() {
+    let number = 69
+    print number
+
+    foo(&number)
+    print number
+}

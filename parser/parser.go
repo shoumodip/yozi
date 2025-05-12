@@ -102,7 +102,7 @@ func (p *Parser) parseType() node.Node {
 				arg.DefType = p.parseType()
 			}
 
-			arg.Local = true
+			arg.Kind = node.LetArg
 			fn.Args = append(fn.Args, &arg)
 
 			if p.lexer.Expect(token.Comma, token.RParen).Kind == token.RParen {
@@ -261,8 +261,8 @@ func (p *Parser) parseStmt() node.Node {
 			for !p.lexer.Read(token.RParen) {
 				arg := node.Let{}
 				arg.Token = p.lexer.Expect(token.Ident)
+				arg.Kind = node.LetArg
 				arg.DefType = p.parseType()
-				arg.Local = true
 				fn.Args = append(fn.Args, &arg)
 
 				if p.lexer.Expect(token.Comma, token.RParen).Kind == token.RParen {
@@ -291,7 +291,11 @@ func (p *Parser) parseStmt() node.Node {
 			let.Assign = p.parseExpr(powerSet)
 		}
 
-		let.Local = p.local
+		if p.local {
+			let.Kind = node.LetLocal
+		} else {
+			let.Kind = node.LetGlobal
+		}
 		return &let
 
 	case token.LBrace:

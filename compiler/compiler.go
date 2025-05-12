@@ -84,12 +84,18 @@ func (c *Compiler) compileExpr(n node.Node, ref bool) string {
 			return fmt.Sprintf("%d", n.Token.I64)
 
 		case token.Ident:
-			if _, ok := n.Defined.(*node.Fn); ok {
+			switch def := n.Defined.(type) {
+			case *node.Fn:
 				ref = true
-			}
-			normalizedName := n.Defined.Literal().Str
 
-			if ref || normalizedName[1] == 'a' {
+			case *node.Let:
+				if def.Kind == node.LetArg {
+					ref = true
+				}
+			}
+
+			normalizedName := n.Defined.Literal().Str
+			if ref {
 				return fmt.Sprintf("%s", normalizedName)
 			}
 
@@ -348,6 +354,10 @@ func ensureMainFunction(context *checker.Context) {
 			os.Exit(1)
 		}
 
+		// Yozi expects  fn main()
+		// Clang expects fn main() i32
+		main.(*node.Fn).Token.Str = ".main"
+
 		// TODO: Function return
 		return
 	}
@@ -396,14 +406,7 @@ func Program(context *checker.Context, exePath string) {
 		globalType := g.GetType()
 		switch g := g.(type) {
 		case *node.Fn:
-			name := g.Token.Str
-			if name == "@main" {
-				// Yozi expects  fn main()
-				// Clang expects fn main() i32
-				name = "@.main"
-			}
-
-			fmt.Fprintf(compiler.out, "define void %s(", name)
+			fmt.Fprintf(compiler.out, "define void %s(", g.Token.Str)
 
 			for i, arg := range g.Args {
 				if i != 0 {
@@ -417,11 +420,33 @@ func Program(context *checker.Context, exePath string) {
 			fmt.Fprintln(compiler.out, ") {")
 			fmt.Fprintln(compiler.out, "$0:")
 
+			for i, arg := range g.Args {
+				if arg.Kind == node.LetLocalArg {
+					arg.Token.Str = fmt.Sprintf("%%v%d", i)
+					fmt.Fprintf(
+						compiler.out,
+						"    %s = alloca %s\n",
+						arg.Token.Str,
+						llvmFormatType(arg.Type),
+					)
+
+					llvmType := llvmFormatType(arg.Type)
+					fmt.Fprintf(
+						compiler.out,
+						"    store %s %%a%d, %s* %s\n",
+						llvmType,
+						i,
+						llvmType,
+						arg.Token.Str,
+					)
+				}
+			}
+
 			for i, l := range g.Locals {
 				// TODO: Assuming functions can't be nested
 				switch l := l.(type) {
 				case *node.Let:
-					l.Token.Str = fmt.Sprintf("%%v%d", i)
+					l.Token.Str = fmt.Sprintf("%%v%d", len(g.Args)+i)
 					fmt.Fprintf(
 						compiler.out,
 						"    %s = alloca %s\n",

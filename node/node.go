@@ -205,8 +205,18 @@ func (_ *Fn) IsMemory() bool {
 	return false
 }
 
+type LetKind = byte
+
+const (
+	LetGlobal LetKind = iota
+	LetLocal
+	LetArg
+	LetLocalArg
+)
+
 type Let struct {
 	Token token.Token
+	Kind  LetKind
 	Type  Type
 
 	// let x = <expr>        // Assign = <expr>, DefType = nil
@@ -214,8 +224,6 @@ type Let struct {
 	// let x <type> = <expr> // Assign = <expr>, DefType = <type>
 	Assign  Node
 	DefType Node
-
-	Local bool
 }
 
 func (l *Let) Literal() token.Token {
