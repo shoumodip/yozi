@@ -73,6 +73,10 @@ func (p *Parser) parseType() node.Node {
 			Token: tok,
 		}
 
+	case token.LAnd:
+		tok = p.lexer.SplitAndBufferRight(tok)
+		fallthrough
+
 	case token.BAnd:
 		return &node.Unary{
 			Token:   tok,

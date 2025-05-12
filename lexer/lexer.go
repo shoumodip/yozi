@@ -344,3 +344,33 @@ func (l *Lexer) Expect(kinds ...token.Kind) token.Token {
 
 	panic("unreachable")
 }
+
+// In expressions, && is a single token. In a type, however it is 2 tokens.
+// Same goes for >> (for generic types)
+//
+// Since this lexer is LL(1) a simple workaround is to "split" the token and
+// buffer the right part. The left part gets returned
+func (l *Lexer) SplitAndBufferRight(tok token.Token) token.Token {
+	switch tok.Kind {
+	case token.LAnd:
+		tok.Kind = token.BAnd
+		tok.Str = "&"
+		lhs := tok
+
+		tok.Pos.Col++
+		l.Buffer(tok)
+		return lhs
+
+	case token.Shr:
+		tok.Kind = token.Gt
+		tok.Str = ">"
+		lhs := tok
+
+		tok.Pos.Col++
+		l.Buffer(tok)
+		return lhs
+
+	default:
+		panic("unreachable")
+	}
+}
