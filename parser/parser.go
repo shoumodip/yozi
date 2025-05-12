@@ -11,6 +11,7 @@ import (
 const (
 	powerNil = iota
 	powerSet
+	powerLor
 	powerCmp
 	powerShl
 	powerAdd
@@ -32,6 +33,9 @@ var tokenPowers = [token.COUNT]int{
 	token.Shr:  powerShl,
 	token.BOr:  powerBor,
 	token.BAnd: powerBor,
+
+	token.LOr:  powerLor,
+	token.LAnd: powerLor,
 
 	token.Set: powerSet,
 

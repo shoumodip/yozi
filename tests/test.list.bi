@@ -36,11 +36,31 @@ arithmetics.yo
 :b testcase 11
 booleans.yo
 :i returncode 0
-:b stdout 8
+:b stdout 64
 1
 0
 0
 1
+69
+420
+1
+69
+420
+0
+69
+0
+69
+0
+69
+1
+69
+1
+69
+420
+1
+69
+420
+0
 
 :b stderr 0
 

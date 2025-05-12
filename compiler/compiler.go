@@ -75,6 +75,47 @@ func (c *Compiler) binaryOp(n *node.Binary, op string) string {
 	return result
 }
 
+func (c *Compiler) shortCircuitLogicalOp(n *node.Binary) string {
+	var shortCircuitValue int
+
+	evalRhs := c.labelNew()
+	shortCircuit := c.labelNew()
+	merge := c.labelNew()
+
+	lhs := c.compileExpr(n.Lhs, false)
+	switch n.Token.Kind {
+	case token.LOr:
+		fmt.Fprintf(c.out, "    br i1 %s, label %%%s, label %%%s\n", lhs, shortCircuit, evalRhs)
+		shortCircuitValue = 1
+
+	case token.LAnd:
+		fmt.Fprintf(c.out, "    br i1 %s, label %%%s, label %%%s\n", lhs, evalRhs, shortCircuit)
+		shortCircuitValue = 0
+
+	default:
+		panic("unreachable")
+	}
+	fmt.Fprintf(c.out, "%s:\n", evalRhs)
+
+	rhs := c.compileExpr(n.Rhs, false)
+	fmt.Fprintf(c.out, "    br label %%%s\n", merge)
+	fmt.Fprintf(c.out, "%s:\n", shortCircuit)
+	fmt.Fprintf(c.out, "    br label %%%s\n", merge)
+	fmt.Fprintf(c.out, "%s:\n", merge)
+
+	result := c.valueNew()
+	fmt.Fprintf(
+		c.out,
+		"    %s = phi i1 [ %d, %%%s ], [ %s, %%%s ]\n",
+		result,
+		shortCircuitValue,
+		shortCircuit,
+		rhs,
+		evalRhs,
+	)
+	return result
+}
+
 // @NodeKind
 func (c *Compiler) compileExpr(n node.Node, ref bool) string {
 	switch n := n.(type) {
@@ -213,6 +254,12 @@ func (c *Compiler) compileExpr(n node.Node, ref bool) string {
 
 		case token.BAnd:
 			return c.binaryOp(n, "and")
+
+		case token.LOr:
+			return c.shortCircuitLogicalOp(n)
+
+		case token.LAnd:
+			return c.shortCircuitLogicalOp(n)
 
 		case token.Set:
 			lhs := c.compileExpr(n.Lhs, true)
