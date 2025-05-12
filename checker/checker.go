@@ -104,7 +104,7 @@ func (c *Context) Check(n node.Node) {
 			if defined, ok := c.Globals[n.Token.Str]; ok {
 				n.Defined = defined
 				n.Type = defined.GetType()
-				n.Memory = true
+				_, n.Memory = defined.(*node.Let)
 			} else {
 				errorUndefined(n, "identifier")
 			}
@@ -122,6 +122,15 @@ func (c *Context) Check(n node.Node) {
 				"%s: ERROR: Expected function, got %s\n",
 				n.Fn.Literal().Pos,
 				fnType,
+			)
+			os.Exit(1)
+		}
+
+		if fnType.Ref != 0 {
+			fmt.Fprintf(
+				os.Stderr,
+				"%s: ERROR: Cannot call pointer to function. Dereference it first\n",
+				n.Fn.Literal().Pos,
 			)
 			os.Exit(1)
 		}

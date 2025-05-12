@@ -1,4 +1,4 @@
-:i count 20
+:i count 22
 :b testcase 14
 arithmetics.yo
 :i returncode 0
@@ -222,4 +222,20 @@ functions/error-not-a-function.yo
 
 :b stderr 73
 functions/error-not-a-function.yo:2:5: ERROR: Expected function, got i64
+
+:b testcase 43
+functions/error-call-to-function-pointer.yo
+:i returncode 1
+:b stdout 0
+
+:b stderr 110
+functions/error-call-to-function-pointer.yo:6:5: ERROR: Cannot call pointer to function. Dereference it first
+
+:b testcase 47
+functions/error-direct-reference-to-function.yo
+:i returncode 1
+:b stdout 0
+
+:b stderr 105
+functions/error-direct-reference-to-function.yo:4:6: ERROR: Cannot take reference of value not in memory
 

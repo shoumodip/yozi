@@ -1,0 +1,7 @@
+fn foo() {}
+
+fn main() {
+    let func = foo
+    let ptr = &func
+    ptr()
+}
