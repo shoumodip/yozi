@@ -231,10 +231,18 @@ func (l *Lexer) Next() token.Token {
 		tok.Kind = token.Div
 
 	case '|':
-		tok.Kind = token.BOr
+		if l.matchChar('|') {
+			tok.Kind = token.LOr
+		} else {
+			tok.Kind = token.BOr
+		}
 
 	case '&':
-		tok.Kind = token.BAnd
+		if l.matchChar('&') {
+			tok.Kind = token.LAnd
+		} else {
+			tok.Kind = token.BAnd
+		}
 
 	case '~':
 		tok.Kind = token.BNot

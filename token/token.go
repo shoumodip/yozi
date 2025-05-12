@@ -31,6 +31,8 @@ const (
 	BAnd
 	BNot
 
+	LOr
+	LAnd
 	LNot
 
 	Set
@@ -80,6 +82,8 @@ var Names = [COUNT]string{
 	BAnd: "'&'",
 	BNot: "'~'",
 
+	LOr:  "'||'",
+	LAnd: "'&&'",
 	LNot: "'!'",
 
 	Set: "'='",

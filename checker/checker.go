@@ -291,6 +291,11 @@ func (c *Context) Check(n node.Node) {
 			c.Check(n.Rhs)
 			n.Type = typeAssert(n.Rhs, typeAssertArith(n.Lhs))
 
+		case token.LOr, token.LAnd:
+			c.Check(n.Lhs)
+			c.Check(n.Rhs)
+			n.Type = typeAssert(n.Rhs, typeAssert(n.Lhs, node.Type{Kind: node.TypeBool}))
+
 		case token.Set:
 			c.Check(n.Lhs)
 			checkIfMemory(n.Lhs, "Cannot assign to value not in memory")
