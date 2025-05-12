@@ -1,0 +1,9 @@
+fn main() {
+    let x i64 = 69
+    let y &i64 = &x
+    let z &&i64 = &y
+
+    print x
+    **z = 420
+    print x
+}

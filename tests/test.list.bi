@@ -1,4 +1,4 @@
-:i count 46
+:i count 47
 :b testcase 14
 arithmetics.yo
 :i returncode 0
@@ -281,6 +281,15 @@ pointers/reference-dereference-multiple.yo
 69
 420
 1337
+
+:b stderr 0
+
+:b testcase 37
+pointers/multiple-level-type-parse.yo
+:i returncode 0
+:b stdout 7
+69
+420
 
 :b stderr 0
 
