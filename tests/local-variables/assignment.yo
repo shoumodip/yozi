@@ -1,6 +1,5 @@
-let x = 69
-
 fn main() {
+    let x = 69
     print x
 
     x = 420

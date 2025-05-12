@@ -1,4 +1,4 @@
-:i count 22
+:i count 29
 :b testcase 14
 arithmetics.yo
 :i returncode 0
@@ -151,7 +151,69 @@ global-variables/error-assignment-does-not-match-type-in-definition.yo
 :b stdout 0
 
 :b stderr 112
-global-variables/error-assignment-does-not-match-type-in-definition.yo:2:18: ERROR: Expected type bool, got i64
+global-variables/error-assignment-does-not-match-type-in-definition.yo:1:14: ERROR: Expected type bool, got i64
+
+:b testcase 29
+local-variables/assignment.yo
+:i returncode 0
+:b stdout 7
+69
+420
+
+:b stderr 0
+
+:b testcase 29
+local-variables/definition.yo
+:i returncode 0
+:b stdout 12
+69
+420
+1337
+
+:b stderr 0
+
+:b testcase 35
+local-variables/definition-forms.yo
+:i returncode 0
+:b stdout 12
+69
+420
+1337
+
+:b stderr 0
+
+:b testcase 28
+local-variables/shadowing.yo
+:i returncode 0
+:b stdout 7
+69
+420
+
+:b stderr 0
+
+:b testcase 42
+local-variables/error-use-outside-scope.yo
+:i returncode 1
+:b stdout 0
+
+:b stderr 81
+local-variables/error-use-outside-scope.yo:7:11: ERROR: Undefined identifier 'x'
+
+:b testcase 61
+local-variables/error-use-outside-scope-despite-same-depth.yo
+:i returncode 1
+:b stdout 0
+
+:b stderr 100
+local-variables/error-use-outside-scope-despite-same-depth.yo:6:15: ERROR: Undefined identifier 'x'
+
+:b testcase 69
+local-variables/error-assignment-does-not-match-type-in-definition.yo
+:i returncode 1
+:b stdout 0
+
+:b stderr 111
+local-variables/error-assignment-does-not-match-type-in-definition.yo:2:18: ERROR: Expected type bool, got i64
 
 :b testcase 33
 pointers/reference-dereference.yo

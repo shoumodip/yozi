@@ -206,8 +206,10 @@ func (p *Parser) parseStmt() node.Node {
 
 	case token.Fn:
 		p.localAssert(tok, false) // TODO: Nested functions
-		name := p.lexer.Expect(token.Ident)
-		fn := node.Fn{Token: name}
+		fn := node.Fn{
+			Token:  p.lexer.Expect(token.Ident),
+			Locals: []node.Node{},
+		}
 
 		p.local = true // TODO: Assuming functions can't be nested
 		{
@@ -230,11 +232,11 @@ func (p *Parser) parseStmt() node.Node {
 		}
 
 		if tok := p.lexer.Peek(); tok.Kind == token.Set {
-			p.localAssert(tok, true) // @Temporary: Till we get local variables running
 			p.lexer.Unbuffer()
 			let.Assign = p.parseExpr(powerSet)
 		}
 
+		let.Local = p.local
 		return &let
 
 	case token.LBrace:

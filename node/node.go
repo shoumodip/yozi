@@ -182,7 +182,8 @@ type Fn struct {
 	Token token.Token
 	Type  Type
 
-	Body Node
+	Body   Node
+	Locals []Node
 }
 
 func (f *Fn) Literal() token.Token {
@@ -210,6 +211,8 @@ type Let struct {
 	// let x <type> = <expr> // Assign = <expr>, DefType = <type>
 	Assign  Node
 	DefType Node
+
+	Local bool
 }
 
 func (l *Let) Literal() token.Token {

@@ -52,6 +52,9 @@ func errorRedefinition(n node.Node, prev node.Node, label string) {
 
 type Context struct {
 	Globals map[string]node.Node
+
+	locals    []node.Node
+	currentFn *node.Fn
 }
 
 func NewContext() Context {
@@ -88,6 +91,19 @@ func (c *Context) checkType(n node.Node) {
 	}
 }
 
+func (c *Context) variableFind(name string) (node.Node, bool) {
+	for i := len(c.locals) - 1; i >= 0; i-- {
+		l := c.locals[i]
+		if l.Literal().Str == name {
+			return l, true
+		}
+	}
+
+	// Bruh
+	global, ok := c.Globals[name]
+	return global, ok
+}
+
 // @NodeKind
 func (c *Context) Check(n node.Node) {
 	switch n := n.(type) {
@@ -101,7 +117,7 @@ func (c *Context) Check(n node.Node) {
 			n.Type = (node.Type{Kind: node.TypeBool})
 
 		case token.Ident:
-			if defined, ok := c.Globals[n.Token.Str]; ok {
+			if defined, ok := c.variableFind(n.Token.Str); ok {
 				n.Defined = defined
 				n.Type = defined.GetType()
 				_, n.Memory = defined.(*node.Let)
@@ -228,9 +244,11 @@ func (c *Context) Check(n node.Node) {
 		typeAssertScalar(n.Operand)
 
 	case *node.Block:
+		scopeStart := len(c.locals)
 		for _, it := range n.Body {
 			c.Check(it)
 		}
+		c.locals = c.locals[0:scopeStart]
 
 	case *node.If:
 		c.Check(n.Condition)
@@ -248,15 +266,23 @@ func (c *Context) Check(n node.Node) {
 			errorRedefinition(n, previous, "global identifier")
 		}
 
-		c.Check(n.Body)
 		n.Type = node.Type{Kind: node.TypeFn}
+
+		c.currentFn = n // TODO: Assuming functions can't be nested
+		{
+			scopeStart := len(c.locals)
+			c.Check(n.Body)
+			c.locals = c.locals[0:scopeStart]
+		}
+		c.currentFn = nil
 
 		c.Globals[n.Token.Str] = n
 
 	case *node.Let:
-		// TODO: Local variables
-		if previous, ok := c.Globals[n.Token.Str]; ok {
-			errorRedefinition(n, previous, "global identifier")
+		if !n.Local {
+			if previous, ok := c.Globals[n.Token.Str]; ok {
+				errorRedefinition(n, previous, "global identifier")
+			}
 		}
 
 		if n.DefType != nil {
@@ -273,7 +299,12 @@ func (c *Context) Check(n node.Node) {
 			}
 		}
 
-		c.Globals[n.Token.Str] = n
+		if n.Local {
+			c.locals = append(c.locals, n)
+			c.currentFn.Locals = append(c.currentFn.Locals, n)
+		} else {
+			c.Globals[n.Token.Str] = n
+		}
 
 	default:
 		panic("unreachable")

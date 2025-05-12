@@ -78,16 +78,17 @@ func (c *Compiler) compileExpr(n node.Node, ref bool) string {
 			if _, ok := n.Defined.(*node.Fn); ok {
 				ref = true
 			}
+			normalizedName := n.Defined.Literal().Str
 
 			// TODO: Local variables
 			if ref {
-				return fmt.Sprintf("@%s", n.Token.Str)
+				return fmt.Sprintf("%s", normalizedName)
 			}
 
 			llvmType := llvmFormatType(n.GetType())
 			result := c.valueNew()
 
-			fmt.Fprintf(c.out, "    %s = load %s, %s* @%s\n", result, llvmType, llvmType, n.Token.Str)
+			fmt.Fprintf(c.out, "    %s = load %s, %s* %s\n", result, llvmType, llvmType, normalizedName)
 			return result
 
 		default:
@@ -266,10 +267,16 @@ func (c *Compiler) compileStmt(n node.Node) {
 		fmt.Fprintf(c.out, "%s:\n", finally)
 
 	case *node.Let:
+		llvmType := llvmFormatType(n.Type)
 		if n.Assign != nil {
 			assign := c.compileExpr(n.Assign, false)
-			llvmType := llvmFormatType(n.GetType())
-			fmt.Fprintf(c.out, "    store %s %s, %s* @%s\n", llvmType, assign, llvmType, n.Token.Str)
+			fmt.Fprintf(c.out, "    store %s %s, %s* %s\n", llvmType, assign, llvmType, n.Token.Str)
+		} else {
+			if n.Type.Ref != 0 || n.Type.Kind == node.TypeFn {
+				fmt.Fprintf(c.out, "    store %s null, %s* %s\n", llvmType, llvmType, n.Token.Str)
+			} else {
+				fmt.Fprintf(c.out, "    store %s 0, %s* %s\n", llvmType, llvmType, n.Token.Str)
+			}
 		}
 
 	default:
@@ -292,8 +299,22 @@ func ensureMainFunction(context *checker.Context) {
 	os.Exit(1)
 }
 
+func normalizeGlobalNames(context *checker.Context) {
+	for _, g := range context.Globals {
+		switch g := g.(type) {
+		case *node.Fn:
+			g.Token.Str = "@" + g.Token.Str
+
+		case *node.Let:
+			g.Token.Str = "@" + g.Token.Str
+		}
+	}
+}
+
 func Program(context *checker.Context, exePath string) {
 	ensureMainFunction(context)
+	normalizeGlobalNames(context)
+
 	asmPath := exePath + ".ll"
 
 	var err error
@@ -306,6 +327,7 @@ func Program(context *checker.Context, exePath string) {
 		os.Exit(1)
 	}
 
+	// Compile the globals
 	for _, g := range compiler.context.Globals {
 		compiler.valueId = 0
 		compiler.labelId = 0
@@ -314,14 +336,28 @@ func Program(context *checker.Context, exePath string) {
 		switch g := g.(type) {
 		case *node.Fn:
 			name := g.Token.Str
-			if name == "main" {
+			if name == "@main" {
 				// Yozi expects  fn main()
 				// Clang expects fn main() i32
-				name = ".main"
+				name = "@.main"
 			}
 
-			fmt.Fprintf(compiler.out, "define void @%s() {\n", name)
+			fmt.Fprintf(compiler.out, "define void %s() {\n", name)
 			fmt.Fprintln(compiler.out, "$0:")
+
+			for i, l := range g.Locals {
+				// TODO: Assuming functions can't be nested
+				switch l := l.(type) {
+				case *node.Let:
+					l.Token.Str = fmt.Sprintf("%%v%d", i)
+					fmt.Fprintf(
+						compiler.out,
+						"    %s = alloca %s\n",
+						l.Token.Str,
+						llvmFormatType(l.Type),
+					)
+				}
+			}
 
 			compiler.compileStmt(g.Body)
 
@@ -331,7 +367,7 @@ func Program(context *checker.Context, exePath string) {
 		case *node.Let:
 			fmt.Fprintf(
 				compiler.out,
-				"@%s = global %s ",
+				"%s = global %s ",
 				g.Literal().Str,
 				llvmFormatType(globalType),
 			)
@@ -353,6 +389,14 @@ func Program(context *checker.Context, exePath string) {
 
 	fmt.Fprintln(compiler.out, "define i32 @main() {")
 	fmt.Fprintln(compiler.out, "$0:")
+
+	// Assign the global variables
+	for _, g := range compiler.context.Globals {
+		if _, ok := g.(*node.Let); ok {
+			compiler.compileStmt(g)
+		}
+	}
+
 	fmt.Fprintln(compiler.out, "    call void @.main()")
 	fmt.Fprintln(compiler.out, "    ret i32 0")
 	fmt.Fprintln(compiler.out, "}")

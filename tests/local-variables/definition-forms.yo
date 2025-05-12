@@ -1,10 +1,12 @@
-let x = 69
-let y i64
-let z i64 = 420
-let p &i64 = &z
-
 fn main() {
+    let x = 69
+
+    let y i64
     y = 420
+
+    let z i64 = 420
+
+    let p &i64 = &z
     *p = 1337
 
     print x
