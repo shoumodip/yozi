@@ -287,6 +287,62 @@ func (c *Compiler) compileExpr(n node.Node, ref bool) string {
 		case token.Ne:
 			return c.binaryOp(n, "icmp ne")
 
+		case token.As: // @TypeKind
+			fromExpr := c.compileExpr(n.Lhs, false)
+
+			to := n.Rhs.GetType()
+			from := n.Lhs.GetType()
+			if from.Equal(to) {
+				return fromExpr
+			}
+
+			result := c.valueNew()
+			command := ""
+
+			llvmTo := llvmFormatType(to)
+			llvmFrom := llvmFormatType(from)
+			if from.Ref != 0 {
+				if to.Ref != 0 {
+					// Pointer -> Pointer
+					command = "bitcast"
+					// fmt.Fprintf(c.out, "    %s = bitcast %s %s to %s\n", result, llvmFrom, fromExpr, llvmTo)
+				} else {
+					// Pointer -> Integer
+					command = "ptrtoint"
+					// fmt.Fprintf(c.out, "    %s = ptrtoint %s %s to %s\n", result, llvmFrom, fromExpr, llvmTo)
+				}
+			} else {
+				switch from.Kind {
+				case node.TypeBool:
+					// Boolean -> Integer
+					command = "zext"
+					// fmt.Fprintf(c.out, "    %s = zext %s %s to %s\n", result, llvmFrom, fromExpr, llvmTo)
+
+				case node.TypeI64:
+					if to.Ref != 0 {
+						// Integer -> Pointer
+						command = "inttoptr"
+						// fmt.Fprintf(c.out, "    %s = inttoptr %s %s to %s\n", result, llvmFrom, fromExpr, llvmTo)
+					} else {
+						switch to.Kind {
+						case node.TypeBool:
+							// Integer -> Boolean
+							fmt.Fprintf(c.out, "    %s = icmp ne %s %s, 0\n", result, llvmFrom, fromExpr)
+							return result
+
+						default:
+							panic("unreachable")
+						}
+					}
+
+				default:
+					panic("unreachable")
+				}
+			}
+
+			fmt.Fprintf(c.out, "    %s = %s %s %s to %s\n", result, command, llvmFrom, fromExpr, llvmTo)
+			return result
+
 		default:
 			panic("unreachable")
 		}

@@ -45,3 +45,10 @@ functions/error-argument-type-mismatch.yo
 functions/error-return-type-expected-unit.yo
 functions/error-return-type-expected-not-unit.yo
 functions/error-return-type-mismatch.yo
+type-cast/demonstration.yo
+type-cast/error-cannot-cast-from-boolean-to-pointer.yo
+type-cast/error-cannot-cast-from-pointer-to-boolean.yo
+type-cast/error-cannot-cast-from-function-to-anything.yo
+type-cast/error-cannot-cast-from-function-pointer-to-anything.yo
+type-cast/error-cannot-cast-from-anything-to-function.yo
+type-cast/error-cannot-cast-from-anything-to-function-pointer.yo

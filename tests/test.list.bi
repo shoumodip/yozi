@@ -1,4 +1,4 @@
-:i count 47
+:i count 54
 :b testcase 14
 arithmetics.yo
 :i returncode 0
@@ -490,4 +490,64 @@ functions/error-return-type-mismatch.yo
 
 :b stderr 80
 functions/error-return-type-mismatch.yo:2:5: ERROR: Expected type i64, got bool
+
+:b testcase 26
+type-cast/demonstration.yo
+:i returncode 0
+:b stdout 10
+1
+0
+1
+0
+1
+
+:b stderr 0
+
+:b testcase 54
+type-cast/error-cannot-cast-from-boolean-to-pointer.yo
+:i returncode 1
+:b stdout 0
+
+:b stderr 98
+type-cast/error-cannot-cast-from-boolean-to-pointer.yo:1:14: ERROR: Cannot cast from bool to &i64
+
+:b testcase 54
+type-cast/error-cannot-cast-from-pointer-to-boolean.yo
+:i returncode 1
+:b stdout 0
+
+:b stderr 98
+type-cast/error-cannot-cast-from-pointer-to-boolean.yo:2:11: ERROR: Cannot cast from &i64 to bool
+
+:b testcase 56
+type-cast/error-cannot-cast-from-function-to-anything.yo
+:i returncode 1
+:b stdout 0
+
+:b stderr 100
+type-cast/error-cannot-cast-from-function-to-anything.yo:3:13: ERROR: Cannot cast from fn () to i64
+
+:b testcase 64
+type-cast/error-cannot-cast-from-function-pointer-to-anything.yo
+:i returncode 1
+:b stdout 0
+
+:b stderr 109
+type-cast/error-cannot-cast-from-function-pointer-to-anything.yo:3:16: ERROR: Cannot cast from &fn () to i64
+
+:b testcase 56
+type-cast/error-cannot-cast-from-anything-to-function.yo
+:i returncode 1
+:b stdout 0
+
+:b stderr 100
+type-cast/error-cannot-cast-from-anything-to-function.yo:1:12: ERROR: Cannot cast from i64 to fn ()
+
+:b testcase 64
+type-cast/error-cannot-cast-from-anything-to-function-pointer.yo
+:i returncode 1
+:b stdout 0
+
+:b stderr 109
+type-cast/error-cannot-cast-from-anything-to-function-pointer.yo:1:12: ERROR: Cannot cast from i64 to &fn ()
 
