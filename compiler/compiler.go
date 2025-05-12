@@ -305,24 +305,20 @@ func (c *Compiler) compileExpr(n node.Node, ref bool) string {
 				if to.Ref != 0 {
 					// Pointer -> Pointer
 					command = "bitcast"
-					// fmt.Fprintf(c.out, "    %s = bitcast %s %s to %s\n", result, llvmFrom, fromExpr, llvmTo)
 				} else {
 					// Pointer -> Integer
 					command = "ptrtoint"
-					// fmt.Fprintf(c.out, "    %s = ptrtoint %s %s to %s\n", result, llvmFrom, fromExpr, llvmTo)
 				}
 			} else {
 				switch from.Kind {
 				case node.TypeBool:
 					// Boolean -> Integer
 					command = "zext"
-					// fmt.Fprintf(c.out, "    %s = zext %s %s to %s\n", result, llvmFrom, fromExpr, llvmTo)
 
 				case node.TypeI64:
 					if to.Ref != 0 {
 						// Integer -> Pointer
 						command = "inttoptr"
-						// fmt.Fprintf(c.out, "    %s = inttoptr %s %s to %s\n", result, llvmFrom, fromExpr, llvmTo)
 					} else {
 						switch to.Kind {
 						case node.TypeBool:
