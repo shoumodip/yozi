@@ -180,3 +180,15 @@ fn main() {
     print x
 }
 ```
+
+### Type Cast
+```rust
+fn main() {
+    let x = 69
+    if x as bool {
+        print true as i64
+    } else {
+        print 1337 as &bool
+    }
+}
+```
