@@ -33,7 +33,16 @@ func llvmFormatType(t node.Type) string {
 		panic("unreachable")
 
 	case node.TypeFn:
-		sb.WriteString("void ()*")
+		// TODO: Function return
+		sb.WriteString("void (")
+		for i, arg := range t.Spec.(*node.Fn).Args {
+			if i != 0 {
+				sb.WriteString(", ")
+			}
+
+			sb.WriteString(llvmFormatType(arg.GetType()))
+		}
+		sb.WriteString(")*")
 
 	default:
 		panic("unreachable")
