@@ -1,0 +1,3 @@
+fn foo() {}
+
+let _ = foo as i64

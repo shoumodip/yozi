@@ -6,7 +6,7 @@
 - [X] Loops
 - [X] Functions
 - [X] Pointers
-- [ ] Type Casting @shoumodip
+- [X] Type Casting
 - [ ] FFI @raklaptudirm
 - [ ] Implement [Rule110](https://en.wikipedia.org/wiki/Rule_110) to prove that it's turing complete
 

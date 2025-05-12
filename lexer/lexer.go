@@ -189,6 +189,9 @@ func (l *Lexer) Next() token.Token {
 			tok.Kind = token.Bool
 			tok.I64 = 0
 
+		case "as":
+			tok.Kind = token.As
+
 		case "print":
 			tok.Kind = token.Print
 

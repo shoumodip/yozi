@@ -51,6 +51,8 @@ const (
 
 	Comma
 
+	As
+
 	If
 	Else
 	While
@@ -101,6 +103,8 @@ var Names = [COUNT]string{
 	RParen: "')'",
 
 	Comma: "','",
+
+	As: "'as'",
 
 	If:     "'if'",
 	Else:   "'else'",

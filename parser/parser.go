@@ -17,6 +17,7 @@ const (
 	powerAdd
 	powerBor
 	powerMul
+	powerAs
 	powerPre
 	powerDot
 )
@@ -47,6 +48,8 @@ var tokenPowers = [token.COUNT]int{
 	token.Ne: powerCmp,
 
 	token.LParen: powerDot,
+
+	token.As: powerAs,
 }
 
 func errorUnexpected(tok token.Token) {
@@ -189,6 +192,13 @@ func (p *Parser) parseExpr(mbp int) node.Node {
 			}
 
 			n = &call
+
+		case token.As:
+			n = &node.Binary{
+				Token: tok,
+				Lhs:   n,
+				Rhs:   p.parseType(),
+			}
 
 		default:
 			n = &node.Binary{

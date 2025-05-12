@@ -27,14 +27,58 @@ func typeAssertArith(n node.Node) node.Type {
 	return actual
 }
 
+func typeIsScalar(t node.Type) bool {
+	return t.Kind == node.TypeBool || t.Kind == node.TypeI64 || t.Ref != 0
+}
+
 func typeAssertScalar(n node.Node) node.Type {
 	actual := n.GetType()
-	if actual.Kind != node.TypeBool && actual.Kind != node.TypeI64 && actual.Ref == 0 {
+	if !typeIsScalar(actual) {
 		fmt.Fprintf(os.Stderr, "%s: ERROR: Expected scalar type, got %s\n", n.Literal().Pos, actual)
 		os.Exit(1)
 	}
 
 	return actual
+}
+
+func typeAssertCastable(cast node.Node, from node.Node, to node.Node) node.Type {
+	castFailed := []func(from node.Type, to node.Type) bool{
+		// Non Scalar -> *
+		// *          -> Non Scalar
+		func(from node.Type, to node.Type) bool {
+			return !typeIsScalar(from) || !typeIsScalar(to)
+		},
+
+		// Function -> *
+		// *        -> Function
+		func(from node.Type, to node.Type) bool {
+			return from.Kind == node.TypeFn || to.Kind == node.TypeFn
+		},
+
+		// Boolean -> Pointer
+		// Pointer -> Boolean
+		func(from node.Type, to node.Type) bool {
+			boolType := node.Type{Kind: node.TypeBool}
+			return (from.Equal(boolType) && to.Ref != 0) || (to.Equal(boolType) && from.Ref != 0)
+		},
+	}
+
+	toType := to.GetType()
+	fromType := from.GetType()
+
+	for _, fail := range castFailed {
+		if fail(fromType, toType) {
+			fmt.Fprintf(
+				os.Stderr,
+				"%s: ERROR: Cannot cast from %s to %s\n",
+				cast.Literal().Pos,
+				fromType,
+				toType)
+			os.Exit(1)
+		}
+	}
+
+	return toType
 }
 
 func errorUndefined(n node.Node, label string) {
@@ -309,6 +353,11 @@ func (c *Context) Check(n node.Node) {
 			c.Check(n.Rhs)
 			typeAssert(n.Rhs, typeAssertArith(n.Lhs))
 			n.Type = node.Type{Kind: node.TypeBool}
+
+		case token.As:
+			c.Check(n.Lhs)
+			c.checkType(n.Rhs)
+			n.Type = typeAssertCastable(n, n.Lhs, n.Rhs)
 
 		default:
 			panic("unreachable")
