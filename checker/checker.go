@@ -196,7 +196,7 @@ func (c *Context) Check(n node.Node) {
 			typeAssert(aArg, fnSig.Args[i].Type)
 		}
 
-		n.Type = node.Type{Kind: node.TypeNil} // TODO: Function return
+		n.Type = node.Type{Kind: node.TypeUnit} // TODO: Function return
 
 	case *node.Unary:
 		// @TokenKind
@@ -272,7 +272,7 @@ func (c *Context) Check(n node.Node) {
 
 			c.Check(n.Rhs)
 			typeAssert(n.Rhs, n.Lhs.GetType())
-			n.Type = node.Type{Kind: node.TypeNil}
+			n.Type = node.Type{Kind: node.TypeUnit}
 
 		case token.Gt, token.Ge, token.Lt, token.Le, token.Eq, token.Ne:
 			c.Check(n.Lhs)
@@ -346,10 +346,22 @@ func (c *Context) Check(n node.Node) {
 
 		if n.Assign != nil {
 			c.Check(n.Assign)
+
+			assignType := n.Assign.GetType()
+			if assignType.Equal(node.Type{Kind: node.TypeUnit}) {
+				fmt.Fprintf(
+					os.Stderr,
+					"%s: ERROR: Cannot define variable with type %s\n",
+					n.Token.Pos,
+					assignType,
+				)
+				os.Exit(1)
+			}
+
 			if n.DefType != nil {
 				typeAssert(n.Assign, n.Type)
 			} else {
-				n.Type = n.Assign.GetType()
+				n.Type = assignType
 			}
 		}
 

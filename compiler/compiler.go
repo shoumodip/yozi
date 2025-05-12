@@ -29,7 +29,7 @@ func llvmFormatType(t node.Type) string {
 	case node.TypeI64:
 		sb.WriteString("i64")
 
-	case node.TypeNil:
+	case node.TypeUnit:
 		panic("unreachable")
 
 	case node.TypeFn:

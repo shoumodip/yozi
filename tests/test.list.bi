@@ -1,4 +1,4 @@
-:i count 33
+:i count 35
 :b testcase 14
 arithmetics.yo
 :i returncode 0
@@ -153,6 +153,14 @@ global-variables/error-assignment-does-not-match-type-in-definition.yo
 :b stderr 112
 global-variables/error-assignment-does-not-match-type-in-definition.yo:1:14: ERROR: Expected type bool, got i64
 
+:b testcase 54
+global-variables/error-cannot-define-with-unit-type.yo
+:i returncode 1
+:b stdout 0
+
+:b stderr 103
+global-variables/error-cannot-define-with-unit-type.yo:3:5: ERROR: Cannot define variable with type ()
+
 :b testcase 29
 local-variables/assignment.yo
 :i returncode 0
@@ -214,6 +222,14 @@ local-variables/error-assignment-does-not-match-type-in-definition.yo
 
 :b stderr 111
 local-variables/error-assignment-does-not-match-type-in-definition.yo:2:18: ERROR: Expected type bool, got i64
+
+:b testcase 53
+local-variables/error-cannot-define-with-unit-type.yo
+:i returncode 1
+:b stdout 0
+
+:b stderr 102
+local-variables/error-cannot-define-with-unit-type.yo:4:9: ERROR: Cannot define variable with type ()
 
 :b testcase 33
 pointers/reference-dereference.yo

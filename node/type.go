@@ -5,7 +5,7 @@ import "strings"
 type TypeKind = byte
 
 const (
-	TypeNil TypeKind = iota
+	TypeUnit TypeKind = iota
 	TypeBool
 	TypeI64
 	TypeFn
@@ -25,8 +25,8 @@ func (t Type) String() string {
 	}
 
 	switch t.Kind {
-	case TypeNil:
-		sb.WriteString("nil")
+	case TypeUnit:
+		sb.WriteString("()")
 
 	case TypeBool:
 		sb.WriteString("bool")
