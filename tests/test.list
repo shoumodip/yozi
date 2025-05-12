@@ -24,6 +24,10 @@ pointers/error-dereference-expected-pointer.yo
 pointers/error-reference-not-memory.yo
 functions/no-arguments-no-return.yo
 functions/no-arguments-no-return-first-class.yo
+functions/yes-arguments-no-return.yo
+functions/yes-arguments-no-return-first-class.yo
 functions/error-not-a-function.yo
 functions/error-call-to-function-pointer.yo
 functions/error-direct-reference-to-function.yo
+functions/error-argument-count-mismatch.yo
+functions/error-argument-type-mismatch.yo

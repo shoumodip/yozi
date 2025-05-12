@@ -280,6 +280,9 @@ func (l *Lexer) Next() token.Token {
 	case ')':
 		tok.Kind = token.RParen
 
+	case ',':
+		tok.Kind = token.Comma
+
 	default:
 		message := "%s: ERROR: Invalid character '%c'\n"
 		if !isPrint(ch) {

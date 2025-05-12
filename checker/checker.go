@@ -83,19 +83,44 @@ func (c *Context) checkType(n node.Node) {
 		n.Type.Ref++
 
 	case *node.Fn:
-		// TODO: Function arguments and return
-		n.Type = node.Type{Kind: node.TypeFn}
+		for _, arg := range n.Args {
+			c.checkType(arg.DefType)
+			arg.Type = arg.DefType.GetType()
+		}
+
+		// TODO: Function return
+		n.Type = node.Type{Kind: node.TypeFn, Spec: n}
 
 	default:
 		panic("unreachable")
 	}
 }
 
+func (c *Context) argumentFind(name string, until int) (node.Node, bool) {
+	for i, arg := range c.currentFn.Args {
+		if i == until {
+			break
+		}
+
+		if arg.Token.Str == name {
+			return arg, true
+		}
+	}
+
+	return nil, false
+}
+
 func (c *Context) variableFind(name string) (node.Node, bool) {
-	for i := len(c.locals) - 1; i >= 0; i-- {
-		l := c.locals[i]
-		if l.Literal().Str == name {
-			return l, true
+	if c.currentFn != nil {
+		for i := len(c.locals) - 1; i >= 0; i-- {
+			l := c.locals[i]
+			if l.Literal().Str == name {
+				return l, true
+			}
+		}
+
+		if arg, ok := c.argumentFind(name, len(c.currentFn.Args)); ok {
+			return arg, true
 		}
 	}
 
@@ -131,12 +156,15 @@ func (c *Context) Check(n node.Node) {
 
 	case *node.Call:
 		c.Check(n.Fn)
+
+		fnTok := n.Fn.Literal()
 		fnType := n.Fn.GetType()
+
 		if fnType.Kind != node.TypeFn {
 			fmt.Fprintf(
 				os.Stderr,
 				"%s: ERROR: Expected function, got %s\n",
-				n.Fn.Literal().Pos,
+				fnTok.Pos,
 				fnType,
 			)
 			os.Exit(1)
@@ -146,9 +174,26 @@ func (c *Context) Check(n node.Node) {
 			fmt.Fprintf(
 				os.Stderr,
 				"%s: ERROR: Cannot call pointer to function. Dereference it first\n",
-				n.Fn.Literal().Pos,
+				fnTok.Pos,
 			)
 			os.Exit(1)
+		}
+
+		fnSig := fnType.Spec.(*node.Fn)
+		if len(n.Args) != len(fnSig.Args) {
+			fmt.Fprintf(
+				os.Stderr,
+				"%s: ERROR: Expected %d arguments, got %d\n",
+				n.Token.Pos,
+				len(fnSig.Args),
+				len(n.Args),
+			)
+			os.Exit(1)
+		}
+
+		for i, aArg := range n.Args {
+			c.Check(aArg)
+			typeAssert(aArg, fnSig.Args[i].Type)
 		}
 
 		n.Type = node.Type{Kind: node.TypeNil} // TODO: Function return
@@ -266,11 +311,20 @@ func (c *Context) Check(n node.Node) {
 			errorRedefinition(n, previous, "global identifier")
 		}
 
-		n.Type = node.Type{Kind: node.TypeFn}
+		n.Type = node.Type{Kind: node.TypeFn, Spec: n}
 
 		c.currentFn = n // TODO: Assuming functions can't be nested
 		{
 			scopeStart := len(c.locals)
+			for i, arg := range n.Args {
+				if previous, ok := c.argumentFind(arg.Token.Str, i); ok {
+					errorRedefinition(arg, previous, "argument")
+				}
+
+				c.checkType(arg.DefType)
+				arg.Type = arg.DefType.GetType()
+			}
+
 			c.Check(n.Body)
 			c.locals = c.locals[0:scopeStart]
 		}

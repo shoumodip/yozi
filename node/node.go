@@ -37,7 +37,8 @@ type Call struct {
 	Token token.Token
 	Type  Type
 
-	Fn Node
+	Fn   Node
+	Args []Node
 }
 
 func (c *Call) Literal() token.Token {
@@ -182,7 +183,9 @@ type Fn struct {
 	Token token.Token
 	Type  Type
 
-	Body   Node
+	Args []*Let
+	Body Node
+
 	Locals []Node
 }
 

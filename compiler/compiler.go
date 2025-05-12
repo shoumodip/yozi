@@ -80,8 +80,7 @@ func (c *Compiler) compileExpr(n node.Node, ref bool) string {
 			}
 			normalizedName := n.Defined.Literal().Str
 
-			// TODO: Local variables
-			if ref {
+			if ref || normalizedName[1] == 'a' {
 				return fmt.Sprintf("%s", normalizedName)
 			}
 
@@ -97,8 +96,31 @@ func (c *Compiler) compileExpr(n node.Node, ref bool) string {
 
 	case *node.Call:
 		fn := c.compileExpr(n.Fn, false)
-		// TODO: Function arguments and return
-		fmt.Fprintf(c.out, "    call void() %s()\n", fn)
+		args := []string{}
+
+		for _, arg := range n.Args {
+			args = append(args, c.compileExpr(arg, false))
+		}
+
+		// TODO: Function return
+		fmt.Fprint(c.out, "    call void(")
+		for i, arg := range n.Args {
+			if i != 0 {
+				fmt.Fprint(c.out, ", ")
+			}
+
+			fmt.Fprint(c.out, llvmFormatType(arg.GetType()))
+		}
+		fmt.Fprintf(c.out, ") %s(", fn)
+		for i, arg := range args {
+			if i != 0 {
+				fmt.Fprint(c.out, ", ")
+			}
+
+			fmt.Fprintf(c.out, "%s %s", llvmFormatType(n.Args[i].GetType()), arg)
+		}
+
+		fmt.Fprintln(c.out, ")")
 		return ""
 
 	case *node.Unary:
@@ -284,14 +306,44 @@ func (c *Compiler) compileStmt(n node.Node) {
 	}
 }
 
+// TODO: Test this
 func ensureMainFunction(context *checker.Context) {
 	if main, ok := context.Globals["main"]; ok {
-		if main.GetType().Equal(node.Type{Kind: node.TypeFn}) {
-			return
+		mainTok := main.Literal()
+		mainType := main.GetType()
+
+		if mainType.Kind != node.TypeFn {
+			fmt.Fprintf(
+				os.Stderr,
+				"%s: ERROR: The identifier 'main' must be a function\n",
+				mainTok.Pos,
+			)
+			os.Exit(1)
 		}
+
+		if mainType.Ref != 0 {
+			fmt.Fprintf(
+				os.Stderr,
+				"%s: ERROR: The entry function 'main' cannot be a pointer\n",
+				mainTok.Pos,
+			)
+			os.Exit(1)
+		}
+
+		if len(mainType.Spec.(*node.Fn).Args) != 0 {
+			fmt.Fprintf(
+				os.Stderr,
+				"%s: ERROR: The entry function 'main' cannot take any arguments\n",
+				mainTok.Pos,
+			)
+			os.Exit(1)
+		}
+
+		// TODO: Function return
+		return
 	}
 
-	fmt.Fprintln(os.Stderr, "ERROR: The 'main' function has not been defined")
+	fmt.Fprintln(os.Stderr, "ERROR: The entry function 'main' has not been defined")
 	fmt.Fprintln(os.Stderr)
 	fmt.Fprintln(os.Stderr, "+ fn main() {")
 	fmt.Fprintln(os.Stderr, "+     // This function MUST be defined")
@@ -342,7 +394,18 @@ func Program(context *checker.Context, exePath string) {
 				name = "@.main"
 			}
 
-			fmt.Fprintf(compiler.out, "define void %s() {\n", name)
+			fmt.Fprintf(compiler.out, "define void %s(", name)
+
+			for i, arg := range g.Args {
+				if i != 0 {
+					fmt.Fprint(compiler.out, ", ")
+				}
+
+				arg.Token.Str = fmt.Sprintf("%%a%d", i)
+				fmt.Fprintf(compiler.out, "%s %s", llvmFormatType(arg.Type), arg.Token.Str)
+			}
+
+			fmt.Fprintln(compiler.out, ") {")
 			fmt.Fprintln(compiler.out, "$0:")
 
 			for i, l := range g.Locals {

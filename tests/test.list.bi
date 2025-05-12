@@ -1,4 +1,4 @@
-:i count 29
+:i count 33
 :b testcase 14
 arithmetics.yo
 :i returncode 0
@@ -277,6 +277,24 @@ functions/no-arguments-no-return-first-class.yo
 
 :b stderr 0
 
+:b testcase 36
+functions/yes-arguments-no-return.yo
+:i returncode 0
+:b stdout 7
+69
+420
+
+:b stderr 0
+
+:b testcase 48
+functions/yes-arguments-no-return-first-class.yo
+:i returncode 0
+:b stdout 6
+69
+69
+
+:b stderr 0
+
 :b testcase 33
 functions/error-not-a-function.yo
 :i returncode 1
@@ -300,4 +318,20 @@ functions/error-direct-reference-to-function.yo
 
 :b stderr 105
 functions/error-direct-reference-to-function.yo:4:6: ERROR: Cannot take reference of value not in memory
+
+:b testcase 42
+functions/error-argument-count-mismatch.yo
+:i returncode 1
+:b stdout 0
+
+:b stderr 83
+functions/error-argument-count-mismatch.yo:4:8: ERROR: Expected 0 arguments, got 1
+
+:b testcase 41
+functions/error-argument-type-mismatch.yo
+:i returncode 1
+:b stdout 0
+
+:b stderr 82
+functions/error-argument-type-mismatch.yo:4:9: ERROR: Expected type i64, got bool
 

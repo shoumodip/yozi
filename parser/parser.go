@@ -73,10 +73,44 @@ func (p *Parser) parseType() node.Node {
 
 	case token.Fn:
 		p.lexer.Expect(token.LParen)
-		p.lexer.Expect(token.RParen) // TODO: Function arguments and return
-		return &node.Fn{
+		fn := node.Fn{
 			Token: tok,
+			Args:  []*node.Let{},
 		}
+
+		for !p.lexer.Read(token.RParen) {
+			arg := node.Let{}
+
+			argToken := p.lexer.Next()
+			if argToken.Kind == token.Ident {
+				peek := p.lexer.Peek()
+				if peek.Kind == token.Comma || peek.Kind == token.RParen {
+					// argToken is type
+					arg.Token = tok
+					arg.DefType = &node.Atom{
+						Token: argToken,
+					}
+				} else {
+					// argToken is name
+					arg.Token = argToken
+					arg.DefType = p.parseType()
+				}
+			} else {
+				// argToken is type
+				p.lexer.Buffer(argToken)
+				arg.Token = tok
+				arg.DefType = p.parseType()
+			}
+
+			arg.Local = true
+			fn.Args = append(fn.Args, &arg)
+
+			if p.lexer.Expect(token.Comma, token.RParen).Kind == token.RParen {
+				break
+			}
+		}
+
+		return &fn
 
 	default:
 		errorUnexpected(tok)
@@ -124,11 +158,20 @@ func (p *Parser) parseExpr(mbp int) node.Node {
 
 		switch tok.Kind {
 		case token.LParen:
-			p.lexer.Expect(token.RParen) // TODO: Arguments
-			n = &node.Call{
+			call := node.Call{
 				Token: tok,
 				Fn:    n,
+				Args:  []node.Node{},
 			}
+
+			for !p.lexer.Read(token.RParen) {
+				call.Args = append(call.Args, p.parseExpr(powerSet))
+				if p.lexer.Expect(token.Comma, token.RParen).Kind == token.RParen {
+					break
+				}
+			}
+
+			n = &call
 
 		default:
 			n = &node.Binary{
@@ -208,13 +251,24 @@ func (p *Parser) parseStmt() node.Node {
 		p.localAssert(tok, false) // TODO: Nested functions
 		fn := node.Fn{
 			Token:  p.lexer.Expect(token.Ident),
+			Args:   []*node.Let{},
 			Locals: []node.Node{},
 		}
 
 		p.local = true // TODO: Assuming functions can't be nested
 		{
 			p.lexer.Expect(token.LParen)
-			p.lexer.Expect(token.RParen) // TODO: Function arguments
+			for !p.lexer.Read(token.RParen) {
+				arg := node.Let{}
+				arg.Token = p.lexer.Expect(token.Ident)
+				arg.DefType = p.parseType()
+				arg.Local = true
+				fn.Args = append(fn.Args, &arg)
+
+				if p.lexer.Expect(token.Comma, token.RParen).Kind == token.RParen {
+					break
+				}
+			}
 
 			p.lexer.Buffer(p.lexer.Expect(token.LBrace)) // TODO: Function return
 			fn.Body = p.parseStmt()
@@ -224,8 +278,9 @@ func (p *Parser) parseStmt() node.Node {
 		return &fn
 
 	case token.Let:
-		name := p.lexer.Expect(token.Ident)
-		let := node.Let{Token: name}
+		let := node.Let{
+			Token: p.lexer.Expect(token.Ident),
+		}
 
 		if tok := p.lexer.Peek(); tok.Kind != token.Set {
 			let.DefType = p.parseType()

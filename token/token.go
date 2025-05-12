@@ -47,6 +47,8 @@ const (
 	LParen
 	RParen
 
+	Comma
+
 	If
 	Else
 	While
@@ -92,6 +94,8 @@ var Names = [COUNT]string{
 	RBrace: "'}'",
 	LParen: "'('",
 	RParen: "')'",
+
+	Comma: "','",
 
 	If:    "'if'",
 	Else:  "'else'",
