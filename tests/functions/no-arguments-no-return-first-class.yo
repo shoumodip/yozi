@@ -1,0 +1,25 @@
+fn foo() {
+    print 69
+}
+
+fn bar() {
+    print 420
+}
+
+let f fn ()
+
+fn main() {
+    f = foo
+    f()
+
+    f = bar
+    f()
+
+    let g = &f
+
+    *g = foo
+    f()
+
+    f = bar
+    (*g)() // Absolute cinema
+}

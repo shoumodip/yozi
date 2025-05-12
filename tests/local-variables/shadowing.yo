@@ -1,0 +1,11 @@
+fn main() {
+    let x = 69
+    print x
+
+    let x = x == 69
+    if x {
+        print 420
+    } else {
+        print 1337
+    }
+}

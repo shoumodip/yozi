@@ -29,8 +29,21 @@ func llvmFormatType(t node.Type) string {
 	case node.TypeI64:
 		sb.WriteString("i64")
 
-	case node.TypeNil:
-		panic("unreachable")
+	case node.TypeUnit:
+		sb.WriteString("void")
+
+	case node.TypeFn:
+		fn := t.Spec.(*node.Fn)
+		sb.WriteString(llvmFormatType(fn.ReturnType()))
+		sb.WriteString(" (")
+		for i, arg := range fn.Args {
+			if i != 0 {
+				sb.WriteString(", ")
+			}
+
+			sb.WriteString(llvmFormatType(arg.GetType()))
+		}
+		sb.WriteString(")*")
 
 	default:
 		panic("unreachable")
@@ -54,8 +67,8 @@ func (c *Compiler) labelNew() string {
 }
 
 func (c *Compiler) binaryOp(n *node.Binary, op string) string {
-	lhs := c.expr(n.Lhs, false)
-	rhs := c.expr(n.Rhs, false)
+	lhs := c.compileExpr(n.Lhs, false)
+	rhs := c.compileExpr(n.Rhs, false)
 	result := c.valueNew()
 
 	fmt.Fprintf(c.out, "    %s = %s %s %s, %s\n", result, op, llvmFormatType(n.Lhs.GetType()), lhs, rhs)
@@ -63,42 +76,87 @@ func (c *Compiler) binaryOp(n *node.Binary, op string) string {
 }
 
 // @NodeKind
-func (c *Compiler) expr(n node.Node, ref bool) string {
+func (c *Compiler) compileExpr(n node.Node, ref bool) string {
 	switch n := n.(type) {
 	case *node.Atom:
-		literal := n.Literal()
-
 		// @TokenKind
-		switch literal.Kind {
+		switch n.Token.Kind {
 		case token.Int, token.Bool:
-			return fmt.Sprintf("%d", literal.I64)
+			return fmt.Sprintf("%d", n.Token.I64)
 
 		case token.Ident:
+			switch def := n.Defined.(type) {
+			case *node.Fn:
+				ref = true
+
+			case *node.Let:
+				if def.Kind == node.LetArg {
+					ref = true
+				}
+			}
+
+			normalizedName := n.Defined.Literal().Str
 			if ref {
-				return fmt.Sprintf("@%s", n.Literal().Str)
+				return fmt.Sprintf("%s", normalizedName)
 			}
 
 			llvmType := llvmFormatType(n.GetType())
 			result := c.valueNew()
 
-			fmt.Fprintf(c.out, "    %s = load %s, %s* @%s\n", result, llvmType, llvmType, n.Literal().Str)
+			fmt.Fprintf(c.out, "    %s = load %s, %s* %s\n", result, llvmType, llvmType, normalizedName)
 			return result
 
 		default:
 			panic("unreachable")
 		}
 
+	case *node.Call:
+		fn := c.compileExpr(n.Fn, false)
+		args := []string{}
+
+		for _, arg := range n.Args {
+			args = append(args, c.compileExpr(arg, false))
+		}
+
+		result := ""
+
+		fmt.Fprint(c.out, "    ")
+		if !n.Type.Equal(node.Type{Kind: node.TypeUnit}) {
+			result = c.valueNew()
+			fmt.Fprintf(c.out, "%s = ", result)
+		}
+
+		fmt.Fprintf(c.out, "call %s(", llvmFormatType(n.Type))
+		for i, arg := range n.Args {
+			if i != 0 {
+				fmt.Fprint(c.out, ", ")
+			}
+
+			fmt.Fprint(c.out, llvmFormatType(arg.GetType()))
+		}
+		fmt.Fprintf(c.out, ") %s(", fn)
+		for i, arg := range args {
+			if i != 0 {
+				fmt.Fprint(c.out, ", ")
+			}
+
+			fmt.Fprintf(c.out, "%s %s", llvmFormatType(n.Args[i].GetType()), arg)
+		}
+
+		fmt.Fprintln(c.out, ")")
+		return result
+
 	case *node.Unary:
 		// @TokenKind
-		switch n.Literal().Kind {
+		switch n.Token.Kind {
 		case token.Sub:
-			operand := c.expr(n.Operand, false)
+			operand := c.compileExpr(n.Operand, false)
 			result := c.valueNew()
 			fmt.Fprintf(c.out, "    %s = sub %s 0, %s\n", result, llvmFormatType(n.Operand.GetType()), operand)
 			return result
 
 		case token.Mul:
-			operand := c.expr(n.Operand, false)
+			operand := c.compileExpr(n.Operand, false)
 			if ref {
 				return operand
 			}
@@ -111,16 +169,16 @@ func (c *Compiler) expr(n node.Node, ref bool) string {
 			return result
 
 		case token.BAnd:
-			return c.expr(n.Operand, true)
+			return c.compileExpr(n.Operand, true)
 
 		case token.BNot:
-			operand := c.expr(n.Operand, false)
+			operand := c.compileExpr(n.Operand, false)
 			result := c.valueNew()
 			fmt.Fprintf(c.out, "    %s = xor %s %s, -1\n", result, llvmFormatType(n.Operand.GetType()), operand)
 			return result
 
 		case token.LNot:
-			operand := c.expr(n.Operand, false)
+			operand := c.compileExpr(n.Operand, false)
 			result := c.valueNew()
 			fmt.Fprintf(c.out, "    %s = xor i1 %s, true\n", result, operand)
 			return result
@@ -131,7 +189,7 @@ func (c *Compiler) expr(n node.Node, ref bool) string {
 
 	case *node.Binary:
 		// @TokenKind
-		switch n.Literal().Kind {
+		switch n.Token.Kind {
 		case token.Add:
 			return c.binaryOp(n, "add")
 
@@ -157,8 +215,8 @@ func (c *Compiler) expr(n node.Node, ref bool) string {
 			return c.binaryOp(n, "and")
 
 		case token.Set:
-			lhs := c.expr(n.Lhs, true)
-			rhs := c.expr(n.Rhs, false)
+			lhs := c.compileExpr(n.Lhs, true)
+			rhs := c.compileExpr(n.Rhs, false)
 
 			llvmType := llvmFormatType(n.Lhs.GetType())
 			fmt.Fprintf(c.out, "    store %s %s, %s* %s\n", llvmType, rhs, llvmType, lhs)
@@ -192,21 +250,30 @@ func (c *Compiler) expr(n node.Node, ref bool) string {
 }
 
 // @NodeKind
-func (c *Compiler) stmt(n node.Node) {
+func (c *Compiler) compileStmt(n node.Node) {
 	switch n := n.(type) {
 	case *node.Print:
-		operand := c.expr(n.Operand, false)
-		c.valueNew()
+		operand := c.compileExpr(n.Operand, false)
+
+		fmtPointer := c.valueNew()
 		fmt.Fprintf(
 			c.out,
-			"    call i32 (ptr, ...) @printf(ptr @.print, %s %s)\n",
+			"    %s = getelementptr [5 x i8], [5 x i8]* @.print, i64 0, i64 0\n",
+			fmtPointer,
+		)
+
+		c.valueNew() // For the call
+		fmt.Fprintf(
+			c.out,
+			"    call i32 (i8*, ...) @printf(i8* %s, %s %s)\n",
+			fmtPointer,
 			llvmFormatType(n.Operand.GetType()),
 			operand,
 		)
 
 	case *node.Block:
-		for _, stmt := range n.Body {
-			c.stmt(stmt)
+		for _, stmt := range n.Nodes {
+			c.compileStmt(stmt)
 		}
 
 	case *node.If:
@@ -214,15 +281,15 @@ func (c *Compiler) stmt(n node.Node) {
 		antecendent := c.labelNew()
 		confluence := c.labelNew()
 
-		condition := c.expr(n.Condition, false)
+		condition := c.compileExpr(n.Condition, false)
 		fmt.Fprintf(c.out, "    br i1 %s, label %%%s, label %%%s\n", condition, consequent, antecendent)
 
 		fmt.Fprintf(c.out, "%s:\n", consequent)
-		c.stmt(n.Consequent)
+		c.compileStmt(n.Consequent)
 		fmt.Fprintf(c.out, "    br label %%%s\n", confluence)
 
 		fmt.Fprintf(c.out, "%s:\n", antecendent)
-		c.stmt(n.Antecedent)
+		c.compileStmt(n.Antecedent)
 		fmt.Fprintf(c.out, "    br label %%%s\n", confluence)
 
 		fmt.Fprintf(c.out, "%s:\n", confluence)
@@ -235,28 +302,115 @@ func (c *Compiler) stmt(n node.Node) {
 		fmt.Fprintf(c.out, "    br label %%%s\n", start)
 		fmt.Fprintf(c.out, "%s:\n", start)
 
-		condition := c.expr(n.Condition, false)
+		condition := c.compileExpr(n.Condition, false)
 		fmt.Fprintf(c.out, "    br i1 %s, label %%%s, label %%%s\n", condition, body, finally)
 
 		fmt.Fprintf(c.out, "%s:\n", body)
-		c.stmt(n.Body)
+		c.compileStmt(n.Body)
 		fmt.Fprintf(c.out, "    br label %%%s\n", start)
 
 		fmt.Fprintf(c.out, "%s:\n", finally)
 
+	case *node.Return:
+		if n.Operand != nil {
+			expr := c.compileExpr(n.Operand, false)
+			fmt.Fprintf(c.out, "    ret %s %s\n", llvmFormatType(n.Type), expr)
+		} else {
+			fmt.Fprintln(c.out, "    ret void")
+		}
+		c.valueNew() // Apparently this is needed??
+
 	case *node.Let:
+		llvmType := llvmFormatType(n.Type)
 		if n.Assign != nil {
-			assign := c.expr(n.Assign, false)
-			llvmType := llvmFormatType(n.GetType())
-			fmt.Fprintf(c.out, "    store %s %s, %s* @%s\n", llvmType, assign, llvmType, n.Literal().Str)
+			assign := c.compileExpr(n.Assign, false)
+			fmt.Fprintf(c.out, "    store %s %s, %s* %s\n", llvmType, assign, llvmType, n.Token.Str)
+		} else {
+			if n.Type.Ref != 0 || n.Type.Kind == node.TypeFn {
+				fmt.Fprintf(c.out, "    store %s null, %s* %s\n", llvmType, llvmType, n.Token.Str)
+			} else {
+				fmt.Fprintf(c.out, "    store %s 0, %s* %s\n", llvmType, llvmType, n.Token.Str)
+			}
 		}
 
 	default:
-		c.expr(n, false)
+		c.compileExpr(n, false)
 	}
 }
 
-func Program(context *checker.Context, nodes []node.Node, exePath string) {
+// TODO: Test this
+func ensureMainFunction(context *checker.Context) {
+	if main, ok := context.Globals["main"]; ok {
+		mainTok := main.Literal()
+		mainType := main.GetType()
+
+		if mainType.Kind != node.TypeFn {
+			fmt.Fprintf(
+				os.Stderr,
+				"%s: ERROR: The identifier 'main' must be a function\n",
+				mainTok.Pos,
+			)
+			os.Exit(1)
+		}
+
+		if mainType.Ref != 0 {
+			fmt.Fprintf(
+				os.Stderr,
+				"%s: ERROR: The entry function 'main' cannot be a pointer\n",
+				mainTok.Pos,
+			)
+			os.Exit(1)
+		}
+
+		mainFn := mainType.Spec.(*node.Fn)
+		if len(mainFn.Args) != 0 {
+			fmt.Fprintf(
+				os.Stderr,
+				"%s: ERROR: The entry function 'main' cannot take any arguments\n",
+				mainTok.Pos,
+			)
+			os.Exit(1)
+		}
+
+		if mainFn.Return != nil {
+			fmt.Fprintf(
+				os.Stderr,
+				"%s: ERROR: The entry function 'main' cannot return anything\n",
+				mainTok.Pos,
+			)
+			os.Exit(1)
+		}
+
+		// Yozi expects  fn main()
+		// Clang expects fn main() i32
+		mainFn.Token.Str = ".main"
+		return
+	}
+
+	fmt.Fprintln(os.Stderr, "ERROR: The entry function 'main' has not been defined")
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintln(os.Stderr, "+ fn main() {")
+	fmt.Fprintln(os.Stderr, "+     // This function MUST be defined")
+	fmt.Fprintln(os.Stderr, "+ }")
+	os.Exit(1)
+}
+
+func normalizeGlobalNames(context *checker.Context) {
+	for _, g := range context.Globals {
+		switch g := g.(type) {
+		case *node.Fn:
+			g.Token.Str = "@" + g.Token.Str
+
+		case *node.Let:
+			g.Token.Str = "@" + g.Token.Str
+		}
+	}
+}
+
+func Program(context *checker.Context, exePath string) {
+	ensureMainFunction(context)
+	normalizeGlobalNames(context)
+
 	asmPath := exePath + ".ll"
 
 	var err error
@@ -269,37 +423,109 @@ func Program(context *checker.Context, nodes []node.Node, exePath string) {
 		os.Exit(1)
 	}
 
-	// @Temporary
-	fmt.Fprintln(compiler.out, `@.print = private unnamed_addr constant [5 x i8] c"%ld\0A\00"`)
-	fmt.Fprintln(compiler.out, `declare i32 @printf(ptr, ...)`)
+	// Compile the globals
+	for _, g := range compiler.context.Globals {
+		compiler.valueId = 0
+		compiler.labelId = 0
 
-	for _, variable := range compiler.context.Globals {
-		variableType := variable.GetType()
-		fmt.Fprintf(
-			compiler.out,
-			"@%s = global %s ",
-			variable.Literal().Str,
-			llvmFormatType(variableType),
-		)
+		globalType := g.GetType()
+		switch g := g.(type) {
+		case *node.Fn:
+			returnType := g.ReturnType()
+			fmt.Fprintf(compiler.out, "define %s %s(", llvmFormatType(returnType), g.Token.Str)
 
-		if variableType.Ref != 0 {
-			fmt.Fprintf(compiler.out, "null\n")
-		} else {
-			fmt.Fprintf(compiler.out, "0\n")
+			for i, arg := range g.Args {
+				if i != 0 {
+					fmt.Fprint(compiler.out, ", ")
+				}
+
+				arg.Token.Str = fmt.Sprintf("%%a%d", i)
+				fmt.Fprintf(compiler.out, "%s %s", llvmFormatType(arg.Type), arg.Token.Str)
+			}
+
+			fmt.Fprintln(compiler.out, ") {")
+			fmt.Fprintln(compiler.out, "$0:")
+
+			for i, arg := range g.Args {
+				if arg.Kind == node.LetLocalArg {
+					arg.Token.Str = fmt.Sprintf("%%v%d", i)
+					fmt.Fprintf(
+						compiler.out,
+						"    %s = alloca %s\n",
+						arg.Token.Str,
+						llvmFormatType(arg.Type),
+					)
+
+					llvmType := llvmFormatType(arg.Type)
+					fmt.Fprintf(
+						compiler.out,
+						"    store %s %%a%d, %s* %s\n",
+						llvmType,
+						i,
+						llvmType,
+						arg.Token.Str,
+					)
+				}
+			}
+
+			for i, l := range g.Locals {
+				// TODO: Assuming functions can't be nested
+				switch l := l.(type) {
+				case *node.Let:
+					l.Token.Str = fmt.Sprintf("%%v%d", len(g.Args)+i)
+					fmt.Fprintf(
+						compiler.out,
+						"    %s = alloca %s\n",
+						l.Token.Str,
+						llvmFormatType(l.Type),
+					)
+				}
+			}
+
+			compiler.compileStmt(g.Body)
+
+			if returnType.Equal(node.Type{Kind: node.TypeUnit}) {
+				fmt.Fprintln(compiler.out, "    ret void")
+			}
+
+			fmt.Fprintln(compiler.out, "}")
+
+		case *node.Let:
+			fmt.Fprintf(
+				compiler.out,
+				"%s = global %s ",
+				g.Literal().Str,
+				llvmFormatType(globalType),
+			)
+
+			if globalType.Ref != 0 || globalType.Kind == node.TypeFn {
+				fmt.Fprintf(compiler.out, "null\n")
+			} else {
+				fmt.Fprintf(compiler.out, "0\n")
+			}
+
+		default:
+			panic("unreachable")
 		}
 	}
 
 	// @Temporary
-	fmt.Fprintln(compiler.out, `define i32 @main() {`)
-	fmt.Fprintln(compiler.out, `$0:`)
+	fmt.Fprintln(compiler.out, `@.print = private unnamed_addr constant [5 x i8] c"%ld\0A\00"`)
+	fmt.Fprintln(compiler.out, "declare i32 @printf(i8*, ...)")
 
-	for _, n := range nodes {
-		compiler.stmt(n)
+	fmt.Fprintln(compiler.out, "define i32 @main() {")
+	fmt.Fprintln(compiler.out, "$0:")
+
+	// Assign the global variables
+	for _, g := range compiler.context.Globals {
+		if _, ok := g.(*node.Let); ok {
+			compiler.compileStmt(g)
+		}
 	}
 
-	// @Temporary
-	fmt.Fprintln(compiler.out, `    ret i32 0`)
-	fmt.Fprintln(compiler.out, `}`)
+	fmt.Fprintln(compiler.out, "    call void @.main()")
+	fmt.Fprintln(compiler.out, "    ret i32 0")
+	fmt.Fprintln(compiler.out, "}")
 
 	compiler.out.Close()
 

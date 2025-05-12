@@ -1,27 +1,29 @@
-if true {
-    print 1
-}
+fn main() {
+    if true {
+        print 1
+    }
 
-if false {
-    print 1
-}
+    if false {
+        print 1
+    }
 
-if true {
-    print 2
-} else {
-    print 3
-}
+    if true {
+        print 2
+    } else {
+        print 3
+    }
 
-if false {
-    print 2
-} else {
-    print 3
-}
+    if false {
+        print 2
+    } else {
+        print 3
+    }
 
-if false {
-    print 3
-} else if true {
-    print 4
-} else {
-    print 5
+    if false {
+        print 3
+    } else if true {
+        print 4
+    } else {
+        print 5
+    }
 }

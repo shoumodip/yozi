@@ -33,6 +33,30 @@ func (a *Atom) IsMemory() bool {
 	return a.Memory
 }
 
+type Call struct {
+	Token token.Token
+	Type  Type
+
+	Fn   Node
+	Args []Node
+}
+
+func (c *Call) Literal() token.Token {
+	return c.Token
+}
+
+func (c *Call) GetType() Type {
+	return c.Type
+}
+
+func (c *Call) SetType(t Type) {
+	c.Type = t
+}
+
+func (*Call) IsMemory() bool {
+	return false
+}
+
 type Unary struct {
 	Token token.Token
 	Type  Type
@@ -102,7 +126,7 @@ func (p *Print) SetType(t Type) {
 	p.Type = t
 }
 
-func (_ *Print) IsMemory() bool {
+func (*Print) IsMemory() bool {
 	return false
 }
 
@@ -127,7 +151,7 @@ func (i *If) SetType(t Type) {
 	i.Type = t
 }
 
-func (_ *If) IsMemory() bool {
+func (*If) IsMemory() bool {
 	return false
 }
 
@@ -151,12 +175,80 @@ func (w *While) SetType(t Type) {
 	w.Type = t
 }
 
-func (_ *While) IsMemory() bool {
+func (*While) IsMemory() bool {
 	return false
 }
 
+type Return struct {
+	Token token.Token
+	Type  Type
+
+	Operand Node
+}
+
+func (r *Return) Literal() token.Token {
+	return r.Token
+}
+
+func (r *Return) GetType() Type {
+	return r.Type
+}
+
+func (r *Return) SetType(t Type) {
+	r.Type = t
+}
+
+func (*Return) IsMemory() bool {
+	return false
+}
+
+type Fn struct {
+	Token token.Token
+	Type  Type
+
+	Args   []*Let
+	Body   *Block
+	Return Node
+
+	Locals []Node
+}
+
+func (f *Fn) Literal() token.Token {
+	return f.Token
+}
+
+func (f *Fn) GetType() Type {
+	return f.Type
+}
+
+func (f *Fn) SetType(t Type) {
+	f.Type = t
+}
+
+func (_ *Fn) IsMemory() bool {
+	return false
+}
+
+func (f *Fn) ReturnType() Type {
+	if f.Return == nil {
+		return Type{Kind: TypeUnit}
+	}
+
+	return f.Return.GetType()
+}
+
+type LetKind = byte
+
+const (
+	LetGlobal LetKind = iota
+	LetLocal
+	LetArg
+	LetLocalArg
+)
+
 type Let struct {
 	Token token.Token
+	Kind  LetKind
 	Type  Type
 
 	// let x = <expr>        // Assign = <expr>, DefType = nil
@@ -186,7 +278,7 @@ type Block struct {
 	Token token.Token
 	Type  Type
 
-	Body []Node
+	Nodes []Node
 }
 
 func (b *Block) Literal() token.Token {

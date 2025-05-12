@@ -1,0 +1,10 @@
+let n = 10
+
+fn main() {
+    print n
+    n = n - 1
+
+    if n >= 0 {
+        main()
+    }
+}

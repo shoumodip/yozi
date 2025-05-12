@@ -1,24 +1,26 @@
-let a = 69
-let b = 420
+fn main() {
+    let a = 69
+    let b = 420
 
-let y = &a
-let z = &y
+    let y = &a
+    let z = &y
 
-print a
-print b
+    print a
+    print b
 
-*y = 420
+    *y = 420
 
-print a
-print b
+    print a
+    print b
 
-*z = &b
-*y = 69
+    *z = &b
+    *y = 69
 
-print a
-print b
+    print a
+    print b
 
-**z = 1337
+    **z = 1337
 
-print a
-print b
+    print a
+    print b
+}
