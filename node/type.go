@@ -35,15 +35,22 @@ func (t Type) String() string {
 		sb.WriteString("i64")
 
 	case TypeFn:
+		fn := t.Spec.(*Fn)
+
 		sb.WriteString("fn (")
-		for i, arg := range t.Spec.(*Fn).Args {
+		for i, arg := range fn.Args {
 			if i != 0 {
 				sb.WriteString(", ")
 			}
 
 			sb.WriteString(arg.Type.String())
 		}
-		sb.WriteString(")")
+		sb.WriteByte(')')
+
+		if fn.Return != nil {
+			sb.WriteByte(' ')
+			sb.WriteString(fn.Return.GetType().String())
+		}
 	}
 
 	return sb.String()
@@ -70,8 +77,7 @@ func (a Type) Equal(b Type) bool {
 			}
 		}
 
-		// TODO: Function return
-		return true
+		return aSig.ReturnType().Equal(bSig.ReturnType())
 
 	default:
 		return true

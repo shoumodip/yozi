@@ -52,6 +52,7 @@ const (
 	If
 	Else
 	While
+	Return
 
 	Fn
 	Let
@@ -97,9 +98,10 @@ var Names = [COUNT]string{
 
 	Comma: "','",
 
-	If:    "'if'",
-	Else:  "'else'",
-	While: "'while",
+	If:     "'if'",
+	Else:   "'else'",
+	While:  "'while'",
+	Return: "'return'",
 
 	Fn:  "'fn'",
 	Let: "'let'",

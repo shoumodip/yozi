@@ -30,12 +30,13 @@ func llvmFormatType(t node.Type) string {
 		sb.WriteString("i64")
 
 	case node.TypeUnit:
-		panic("unreachable")
+		sb.WriteString("void")
 
 	case node.TypeFn:
-		// TODO: Function return
-		sb.WriteString("void (")
-		for i, arg := range t.Spec.(*node.Fn).Args {
+		fn := t.Spec.(*node.Fn)
+		sb.WriteString(llvmFormatType(fn.ReturnType()))
+		sb.WriteString(" (")
+		for i, arg := range fn.Args {
 			if i != 0 {
 				sb.WriteString(", ")
 			}
@@ -117,8 +118,15 @@ func (c *Compiler) compileExpr(n node.Node, ref bool) string {
 			args = append(args, c.compileExpr(arg, false))
 		}
 
-		// TODO: Function return
-		fmt.Fprint(c.out, "    call void(")
+		result := ""
+
+		fmt.Fprint(c.out, "    ")
+		if !n.Type.Equal(node.Type{Kind: node.TypeUnit}) {
+			result = c.valueNew()
+			fmt.Fprintf(c.out, "%s = ", result)
+		}
+
+		fmt.Fprintf(c.out, "call %s(", llvmFormatType(n.Type))
 		for i, arg := range n.Args {
 			if i != 0 {
 				fmt.Fprint(c.out, ", ")
@@ -136,7 +144,7 @@ func (c *Compiler) compileExpr(n node.Node, ref bool) string {
 		}
 
 		fmt.Fprintln(c.out, ")")
-		return ""
+		return result
 
 	case *node.Unary:
 		// @TokenKind
@@ -264,7 +272,7 @@ func (c *Compiler) compileStmt(n node.Node) {
 		)
 
 	case *node.Block:
-		for _, stmt := range n.Body {
+		for _, stmt := range n.Nodes {
 			c.compileStmt(stmt)
 		}
 
@@ -302,6 +310,15 @@ func (c *Compiler) compileStmt(n node.Node) {
 		fmt.Fprintf(c.out, "    br label %%%s\n", start)
 
 		fmt.Fprintf(c.out, "%s:\n", finally)
+
+	case *node.Return:
+		if n.Operand != nil {
+			expr := c.compileExpr(n.Operand, false)
+			fmt.Fprintf(c.out, "    ret %s %s\n", llvmFormatType(n.Type), expr)
+		} else {
+			fmt.Fprintln(c.out, "    ret void")
+		}
+		c.valueNew() // Apparently this is needed??
 
 	case *node.Let:
 		llvmType := llvmFormatType(n.Type)
@@ -345,7 +362,8 @@ func ensureMainFunction(context *checker.Context) {
 			os.Exit(1)
 		}
 
-		if len(mainType.Spec.(*node.Fn).Args) != 0 {
+		mainFn := mainType.Spec.(*node.Fn)
+		if len(mainFn.Args) != 0 {
 			fmt.Fprintf(
 				os.Stderr,
 				"%s: ERROR: The entry function 'main' cannot take any arguments\n",
@@ -354,11 +372,18 @@ func ensureMainFunction(context *checker.Context) {
 			os.Exit(1)
 		}
 
+		if mainFn.Return != nil {
+			fmt.Fprintf(
+				os.Stderr,
+				"%s: ERROR: The entry function 'main' cannot return anything\n",
+				mainTok.Pos,
+			)
+			os.Exit(1)
+		}
+
 		// Yozi expects  fn main()
 		// Clang expects fn main() i32
-		main.(*node.Fn).Token.Str = ".main"
-
-		// TODO: Function return
+		mainFn.Token.Str = ".main"
 		return
 	}
 
@@ -406,7 +431,8 @@ func Program(context *checker.Context, exePath string) {
 		globalType := g.GetType()
 		switch g := g.(type) {
 		case *node.Fn:
-			fmt.Fprintf(compiler.out, "define void %s(", g.Token.Str)
+			returnType := g.ReturnType()
+			fmt.Fprintf(compiler.out, "define %s %s(", llvmFormatType(returnType), g.Token.Str)
 
 			for i, arg := range g.Args {
 				if i != 0 {
@@ -458,7 +484,10 @@ func Program(context *checker.Context, exePath string) {
 
 			compiler.compileStmt(g.Body)
 
-			fmt.Fprintln(compiler.out, "    ret void")
+			if returnType.Equal(node.Type{Kind: node.TypeUnit}) {
+				fmt.Fprintln(compiler.out, "    ret void")
+			}
+
 			fmt.Fprintln(compiler.out, "}")
 
 		case *node.Let:

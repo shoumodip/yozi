@@ -179,12 +179,36 @@ func (*While) IsMemory() bool {
 	return false
 }
 
+type Return struct {
+	Token token.Token
+	Type  Type
+
+	Operand Node
+}
+
+func (r *Return) Literal() token.Token {
+	return r.Token
+}
+
+func (r *Return) GetType() Type {
+	return r.Type
+}
+
+func (r *Return) SetType(t Type) {
+	r.Type = t
+}
+
+func (*Return) IsMemory() bool {
+	return false
+}
+
 type Fn struct {
 	Token token.Token
 	Type  Type
 
-	Args []*Let
-	Body Node
+	Args   []*Let
+	Body   *Block
+	Return Node
 
 	Locals []Node
 }
@@ -203,6 +227,14 @@ func (f *Fn) SetType(t Type) {
 
 func (_ *Fn) IsMemory() bool {
 	return false
+}
+
+func (f *Fn) ReturnType() Type {
+	if f.Return == nil {
+		return Type{Kind: TypeUnit}
+	}
+
+	return f.Return.GetType()
 }
 
 type LetKind = byte
@@ -246,7 +278,7 @@ type Block struct {
 	Token token.Token
 	Type  Type
 
-	Body []Node
+	Nodes []Node
 }
 
 func (b *Block) Literal() token.Token {

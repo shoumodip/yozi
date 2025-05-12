@@ -88,8 +88,14 @@ func (c *Context) checkType(n node.Node) {
 			arg.Type = arg.DefType.GetType()
 		}
 
-		// TODO: Function return
-		n.Type = node.Type{Kind: node.TypeFn, Spec: n}
+		if n.Return != nil {
+			c.checkType(n.Return)
+		}
+
+		n.Type = node.Type{
+			Kind: node.TypeFn,
+			Spec: n,
+		}
 
 	default:
 		panic("unreachable")
@@ -225,7 +231,7 @@ func (c *Context) Check(n node.Node) {
 			typeAssert(aArg, fnSig.Args[i].Type)
 		}
 
-		n.Type = node.Type{Kind: node.TypeUnit} // TODO: Function return
+		n.Type = fnSig.ReturnType()
 
 	case *node.Unary:
 		// @TokenKind
@@ -309,7 +315,7 @@ func (c *Context) Check(n node.Node) {
 
 	case *node.Block:
 		scopeStart := len(c.locals)
-		for _, it := range n.Body {
+		for _, it := range n.Nodes {
 			c.Check(it)
 		}
 		c.locals = c.locals[0:scopeStart]
@@ -324,6 +330,15 @@ func (c *Context) Check(n node.Node) {
 		c.Check(n.Condition)
 		typeAssert(n.Condition, node.Type{Kind: node.TypeBool})
 		c.Check(n.Body)
+
+	case *node.Return:
+		if n.Operand != nil {
+			c.Check(n.Operand)
+			n.Type = n.Operand.GetType()
+		} else if c.currentFn.Return != nil {
+			n.Type = node.Type{Kind: node.TypeUnit}
+		}
+		typeAssert(n, c.currentFn.ReturnType())
 
 	case *node.Fn:
 		if previous, ok := c.Globals[n.Token.Str]; ok {
@@ -344,7 +359,29 @@ func (c *Context) Check(n node.Node) {
 				arg.Type = arg.DefType.GetType()
 			}
 
+			if n.Return != nil {
+				c.checkType(n.Return)
+			}
+
 			c.Check(n.Body)
+
+			if n.Return != nil {
+				// TODO: Implement proper return analysis
+				endsWithReturn := len(n.Body.Nodes) > 0
+				if endsWithReturn {
+					_, endsWithReturn = n.Body.Nodes[len(n.Body.Nodes)-1].(*node.Return)
+				}
+
+				if !endsWithReturn {
+					fmt.Fprintf(
+						os.Stderr,
+						"%s: ERROR: Expected last statement to be 'return'\n",
+						n.Body.Token.Pos,
+					)
+					os.Exit(1)
+				}
+			}
+
 			c.locals = c.locals[0:scopeStart]
 		}
 		c.currentFn = nil

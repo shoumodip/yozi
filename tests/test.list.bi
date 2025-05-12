@@ -1,4 +1,4 @@
-:i count 37
+:i count 44
 :b testcase 14
 arithmetics.yo
 :i returncode 0
@@ -320,6 +320,22 @@ functions/yes-arguments-no-return-first-class.yo
 
 :b stderr 0
 
+:b testcase 37
+functions/yes-arguments-yes-return.yo
+:i returncode 0
+:b stdout 3
+69
+
+:b stderr 0
+
+:b testcase 49
+functions/yes-arguments-yes-return-first-class.yo
+:i returncode 0
+:b stdout 4
+420
+
+:b stderr 0
+
 :b testcase 41
 functions/arguments-as-local-variables.yo
 :i returncode 0
@@ -328,6 +344,22 @@ functions/arguments-as-local-variables.yo
 420
 69
 420
+
+:b stderr 0
+
+:b testcase 30
+functions/early-return-unit.yo
+:i returncode 0
+:b stdout 3
+69
+
+:b stderr 0
+
+:b testcase 34
+functions/early-return-not-unit.yo
+:i returncode 0
+:b stdout 3
+69
 
 :b stderr 0
 
@@ -370,4 +402,28 @@ functions/error-argument-type-mismatch.yo
 
 :b stderr 82
 functions/error-argument-type-mismatch.yo:4:9: ERROR: Expected type i64, got bool
+
+:b testcase 44
+functions/error-return-type-expected-unit.yo
+:i returncode 1
+:b stdout 0
+
+:b stderr 83
+functions/error-return-type-expected-unit.yo:2:5: ERROR: Expected type (), got i64
+
+:b testcase 48
+functions/error-return-type-expected-not-unit.yo
+:i returncode 1
+:b stdout 0
+
+:b stderr 87
+functions/error-return-type-expected-not-unit.yo:2:5: ERROR: Expected type i64, got ()
+
+:b testcase 39
+functions/error-return-type-mismatch.yo
+:i returncode 1
+:b stdout 0
+
+:b stderr 80
+functions/error-return-type-mismatch.yo:2:5: ERROR: Expected type i64, got bool
 

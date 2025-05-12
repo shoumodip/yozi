@@ -56,6 +56,10 @@ type Parser struct {
 	Nodes []node.Node
 }
 
+func tokenKindIsStartOfType(k token.Kind) bool {
+	return k == token.Ident || k == token.BAnd || k == token.Fn
+}
+
 // @TokenKind
 func (p *Parser) parseType() node.Node {
 	tok := p.lexer.Next()
@@ -108,6 +112,11 @@ func (p *Parser) parseType() node.Node {
 			if p.lexer.Expect(token.Comma, token.RParen).Kind == token.RParen {
 				break
 			}
+		}
+
+		tok = p.lexer.Peek()
+		if !tok.OnNewline && tokenKindIsStartOfType(tok.Kind) {
+			fn.Return = p.parseType()
 		}
 
 		return &fn
@@ -247,6 +256,16 @@ func (p *Parser) parseStmt() node.Node {
 			Body:      body,
 		}
 
+	case token.Return:
+		p.localAssert(tok, true)
+
+		ret := node.Return{Token: tok}
+		if peek := p.lexer.Peek(); !peek.OnNewline {
+			ret.Operand = p.parseExpr(powerSet)
+		}
+
+		return &ret
+
 	case token.Fn:
 		p.localAssert(tok, false) // TODO: Nested functions
 		fn := node.Fn{
@@ -255,7 +274,7 @@ func (p *Parser) parseStmt() node.Node {
 			Locals: []node.Node{},
 		}
 
-		p.local = true // TODO: Assuming functions can't be nested
+		p.local = true
 		{
 			p.lexer.Expect(token.LParen)
 			for !p.lexer.Read(token.RParen) {
@@ -270,8 +289,12 @@ func (p *Parser) parseStmt() node.Node {
 				}
 			}
 
-			p.lexer.Buffer(p.lexer.Expect(token.LBrace)) // TODO: Function return
-			fn.Body = p.parseStmt()
+			if peek := p.lexer.Peek(); peek.Kind != token.LBrace {
+				fn.Return = p.parseType()
+			}
+
+			p.lexer.Buffer(p.lexer.Expect(token.LBrace))
+			fn.Body = p.parseStmt().(*node.Block)
 		}
 		p.local = false
 
@@ -301,13 +324,19 @@ func (p *Parser) parseStmt() node.Node {
 	case token.LBrace:
 		p.localAssert(tok, true)
 		body := []node.Node{}
-		for !p.lexer.Read(token.RBrace) {
+		for {
+			// Propagate the '}' as the node token
+			if tok = p.lexer.Peek(); tok.Kind == token.RBrace {
+				p.lexer.Unbuffer()
+				break
+			}
+
 			body = append(body, p.parseStmt())
 		}
 
 		return &node.Block{
 			Token: tok,
-			Body:  body,
+			Nodes: body,
 		}
 
 	default:

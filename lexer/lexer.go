@@ -201,6 +201,9 @@ func (l *Lexer) Next() token.Token {
 		case "while":
 			tok.Kind = token.While
 
+		case "return":
+			tok.Kind = token.Return
+
 		case "fn":
 			tok.Kind = token.Fn
 
