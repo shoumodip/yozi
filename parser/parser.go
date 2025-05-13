@@ -64,7 +64,7 @@ type Parser struct {
 }
 
 func tokenKindIsStartOfType(k token.Kind) bool {
-	return k == token.Ident || k == token.BAnd || k == token.Fn
+	return k == token.Ident || k == token.LAnd || k == token.BAnd || k == token.Fn
 }
 
 // @TokenKind

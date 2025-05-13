@@ -1,0 +1,7 @@
+fn main() {
+    let a = 69
+    let x = &a
+    let y = x + 10 as &i64
+    let z = y - 10 as &i64
+    print x == z
+}

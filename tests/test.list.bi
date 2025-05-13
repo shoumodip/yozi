@@ -1,4 +1,4 @@
-:i count 54
+:i count 55
 :b testcase 14
 arithmetics.yo
 :i returncode 0
@@ -290,6 +290,14 @@ pointers/multiple-level-type-parse.yo
 :b stdout 7
 69
 420
+
+:b stderr 0
+
+:b testcase 22
+pointers/arithmetic.yo
+:i returncode 0
+:b stdout 2
+1
 
 :b stderr 0
 
