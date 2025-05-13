@@ -1,6 +1,10 @@
 package token
 
-import "fmt"
+import (
+	"fmt"
+	"os"
+	"strconv"
+)
 
 type Pos struct {
 	Path string
@@ -16,7 +20,17 @@ type Kind = byte
 
 const (
 	Eof Kind = iota
-	Int
+
+	I8
+	I16
+	I32
+	I64
+	U8
+	U16
+	U32
+	U64
+	Int // Untyped
+
 	Bool
 	Ident
 
@@ -68,8 +82,18 @@ const (
 
 // @TokenKind
 var Names = [COUNT]string{
-	Eof:   "end of file",
-	Int:   "integer",
+	Eof: "end of file",
+
+	I8:  "integer",
+	I16: "integer",
+	I32: "integer",
+	I64: "integer",
+	U8:  "integer",
+	U16: "integer",
+	U32: "integer",
+	U64: "integer",
+	Int: "integer",
+
 	Bool:  "boolean",
 	Ident: "identifier",
 
@@ -123,5 +147,50 @@ type Token struct {
 	Str       string
 	OnNewline bool
 
-	I64 int64
+	Int uint64
+}
+
+// @TokenKind
+func (t Token) IsInteger() bool {
+	switch t.Kind {
+	case I8, I16, I32, I64, U8, U16, U32, U64, Int:
+		return true
+
+	default:
+		return false
+	}
+}
+
+func (t *Token) ParseInteger(bits int) {
+	var err error
+	var typeName string
+
+	switch t.Kind {
+	case I8, I16, I32, I64, Int:
+		typeName = fmt.Sprintf("i%d", bits)
+
+		var temp int64
+		temp, err = strconv.ParseInt(t.Str, 10, bits)
+
+		// Integer literals are always positive hence int64 fits within uint64
+		t.Int = uint64(temp)
+
+	case U8, U16, U32, U64:
+		typeName = fmt.Sprintf("u%d", bits)
+		t.Int, err = strconv.ParseUint(t.Str, 10, bits)
+
+	default:
+		panic("unreachable")
+	}
+
+	if err != nil {
+		fmt.Fprintf(
+			os.Stderr,
+			"%s: ERROR: Integer literal '%s' is too large for type %s\n",
+			t.Pos,
+			t.Str,
+			typeName,
+		)
+		os.Exit(1)
+	}
 }

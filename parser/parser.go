@@ -145,10 +145,8 @@ func (p *Parser) parseExpr(mbp int) node.Node {
 
 	tok := p.lexer.Next()
 	switch tok.Kind {
-	case token.Int, token.Bool, token.Ident:
-		n = &node.Atom{
-			Token: tok,
-		}
+	case token.Bool, token.Ident:
+		n = &node.Atom{Token: tok}
 
 	case token.Sub, token.Mul, token.BAnd, token.BNot, token.LNot:
 		n = &node.Unary{
@@ -161,7 +159,11 @@ func (p *Parser) parseExpr(mbp int) node.Node {
 		p.lexer.Expect(token.RParen)
 
 	default:
-		errorUnexpected(tok)
+		if tok.IsInteger() {
+			n = &node.Atom{Token: tok}
+		} else {
+			errorUnexpected(tok)
+		}
 	}
 
 	for true {

@@ -1,0 +1,11 @@
+fn a(x i8)  { print x }
+fn b(x i16) { print x }
+fn c(x i32) { print x }
+fn d(x i64) { print x }
+
+fn main() {
+    a(69i8)
+    b(420i16)
+    c(1337i32)
+    d(80085i64)
+}

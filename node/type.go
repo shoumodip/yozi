@@ -7,7 +7,16 @@ type TypeKind = byte
 const (
 	TypeUnit TypeKind = iota
 	TypeBool
+
+	TypeI8
+	TypeI16
+	TypeI32
 	TypeI64
+	TypeU8
+	TypeU16
+	TypeU32
+	TypeU64
+
 	TypeFn
 )
 
@@ -31,8 +40,29 @@ func (t Type) String() string {
 	case TypeBool:
 		sb.WriteString("bool")
 
+	case TypeI8:
+		sb.WriteString("i8")
+
+	case TypeI16:
+		sb.WriteString("i16")
+
+	case TypeI32:
+		sb.WriteString("i32")
+
 	case TypeI64:
 		sb.WriteString("i64")
+
+	case TypeU8:
+		sb.WriteString("u8")
+
+	case TypeU16:
+		sb.WriteString("u16")
+
+	case TypeU32:
+		sb.WriteString("u32")
+
+	case TypeU64:
+		sb.WriteString("u64")
 
 	case TypeFn:
 		fn := t.Spec.(*Fn)
@@ -78,6 +108,20 @@ func (a Type) Equal(b Type) bool {
 		}
 
 		return aSig.ReturnType().Equal(bSig.ReturnType())
+
+	default:
+		return true
+	}
+}
+
+func (t Type) IsSignedInt() bool {
+	if t.Ref != 0 {
+		return false
+	}
+
+	switch t.Kind {
+	case TypeU8, TypeU16, TypeU32, TypeU64:
+		return false
 
 	default:
 		return true
