@@ -30,6 +30,22 @@ fn main() {
 }
 ```
 
+Integer types supported:
+- `i8`
+- `i16`
+- `i32`
+- `i64`
+- `u8`
+- `u16`
+- `u32`
+- `u64`
+
+```rust
+fn main() {
+    print 69u32 // Integer literals can be suffixed with their type
+}
+```
+
 Typical arithmetic, bitwise, and logical operators work as expected.
 
 ### If Statements
