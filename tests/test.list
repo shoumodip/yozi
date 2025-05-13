@@ -24,6 +24,7 @@ local-variables/error-cannot-define-with-unit-type.yo
 pointers/reference-dereference.yo
 pointers/reference-dereference-multiple.yo
 pointers/multiple-level-type-parse.yo
+pointers/arithmetic.yo
 pointers/error-dereference-expected-pointer.yo
 pointers/error-reference-not-memory.yo
 functions/no-arguments-no-return.yo
