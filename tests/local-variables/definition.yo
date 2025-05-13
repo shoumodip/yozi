@@ -1,9 +1,9 @@
 fn main() {
     let first = 69
-    print first
+    #print first
 
     let second = 420
-    print second
+    #print second
 
-    print first + 8 + second * 3
+    #print first + 8 + second * 3
 }

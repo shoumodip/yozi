@@ -1,8 +1,8 @@
 let x = 69
 
 fn main() {
-    print x
+    #print x
 
     x = 420
-    print x
+    #print x
 }

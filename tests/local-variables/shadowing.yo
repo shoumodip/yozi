@@ -1,11 +1,11 @@
 fn main() {
     let x = 69
-    print x
+    #print x
 
     let x = x == 69
     if x {
-        print 420
+        #print 420
     } else {
-        print 1337
+        #print 1337
     }
 }

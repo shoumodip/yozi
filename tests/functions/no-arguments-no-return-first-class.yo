@@ -1,9 +1,9 @@
 fn foo() {
-    print 69
+    #print 69
 }
 
 fn bar() {
-    print 420
+    #print 420
 }
 
 let f fn ()

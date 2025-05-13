@@ -1,9 +1,9 @@
 fn bar() i64 {
     return 69
-    print 69
+    #print 69
     return 420
 }
 
 fn main() {
-    print bar()
+    #print bar()
 }

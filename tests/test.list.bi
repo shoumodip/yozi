@@ -186,7 +186,7 @@ global-variables/error-undefined.yo
 :b stdout 0
 
 :b stderr 76
-global-variables/error-undefined.yo:2:11: ERROR: Undefined identifier 'foo'
+global-variables/error-undefined.yo:2:12: ERROR: Undefined identifier 'foo'
 
 :b testcase 38
 global-variables/error-redefinition.yo
@@ -282,7 +282,7 @@ local-variables/error-use-outside-scope.yo
 :b stdout 0
 
 :b stderr 81
-local-variables/error-use-outside-scope.yo:7:11: ERROR: Undefined identifier 'x'
+local-variables/error-use-outside-scope.yo:7:12: ERROR: Undefined identifier 'x'
 
 :b testcase 61
 local-variables/error-use-outside-scope-despite-same-depth.yo
@@ -290,7 +290,7 @@ local-variables/error-use-outside-scope-despite-same-depth.yo
 :b stdout 0
 
 :b stderr 100
-local-variables/error-use-outside-scope-despite-same-depth.yo:6:15: ERROR: Undefined identifier 'x'
+local-variables/error-use-outside-scope-despite-same-depth.yo:6:16: ERROR: Undefined identifier 'x'
 
 :b testcase 69
 local-variables/error-assignment-does-not-match-type-in-definition.yo

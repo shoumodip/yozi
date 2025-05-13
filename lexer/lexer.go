@@ -226,9 +226,6 @@ func (l *Lexer) Next() token.Token {
 		case "as":
 			tok.Kind = token.As
 
-		case "print":
-			tok.Kind = token.Print
-
 		case "if":
 			tok.Kind = token.If
 
@@ -330,6 +327,27 @@ func (l *Lexer) Next() token.Token {
 
 	case ',':
 		tok.Kind = token.Comma
+
+	case '#': // @Temporary
+		for l.head < l.size && isIdent(l.ch) {
+			l.nextChar()
+		}
+
+		tok.Str = string(l.bytes[head:l.head])
+		switch tok.Str {
+		case "#print":
+			tok.Kind = token.Print
+
+		default:
+			fmt.Fprintf(
+				os.Stderr,
+				"%s: ERROR: Invalid development intrinsic '%s'\n",
+				tok.Pos,
+				tok.Str,
+			)
+			os.Exit(1)
+		}
+		return tok
 
 	default:
 		message := "%s: ERROR: Invalid character '%c'\n"

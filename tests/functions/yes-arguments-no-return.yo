@@ -1,6 +1,6 @@
 fn addAndPrint(x i64, y i64) {
     let z = x + y
-    print z
+    #print z
 }
 
 fn main() {
