@@ -21,6 +21,10 @@ type Compiler struct {
 // @Temporary
 // @TypeKind
 func llvmFormatType(t node.Type) string {
+	if t.Kind == node.TypeRawptr {
+		return "i8*"
+	}
+
 	sb := strings.Builder{}
 	switch t.Kind {
 	case node.TypeBool:
@@ -535,7 +539,7 @@ func (c *Compiler) compileStmt(n node.Node) {
 			assign := c.compileExpr(n.Assign, false)
 			fmt.Fprintf(c.out, "    store %s %s, %s* %s\n", llvmType, assign, llvmType, n.Token.Str)
 		} else {
-			if n.Type.Ref != 0 || n.Type.Kind == node.TypeFn {
+			if n.Type.Ref != 0 || n.Type.Kind == node.TypeFn || n.Type.Kind == node.TypeRawptr {
 				fmt.Fprintf(c.out, "    store %s null, %s* %s\n", llvmType, llvmType, n.Token.Str)
 			} else {
 				fmt.Fprintf(c.out, "    store %s 0, %s* %s\n", llvmType, llvmType, n.Token.Str)
@@ -707,7 +711,7 @@ func Program(context *checker.Context, exePath string) {
 				llvmFormatType(globalType),
 			)
 
-			if globalType.Ref != 0 || globalType.Kind == node.TypeFn {
+			if globalType.Ref != 0 || globalType.Kind == node.TypeFn || globalType.Kind == node.TypeRawptr {
 				fmt.Fprintf(compiler.out, "null\n")
 			} else {
 				fmt.Fprintf(compiler.out, "0\n")

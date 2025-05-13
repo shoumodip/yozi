@@ -1,4 +1,4 @@
-:i count 60
+:i count 61
 :b testcase 23
 integers/arithmetics.yo
 :i returncode 0
@@ -364,6 +364,14 @@ pointers/error-reference-not-memory.yo
 
 :b stderr 96
 pointers/error-reference-not-memory.yo:2:6: ERROR: Cannot take reference of value not in memory
+
+:b testcase 43
+pointers/error-cannot-dereference-rawptr.yo
+:i returncode 1
+:b stdout 0
+
+:b stderr 87
+pointers/error-cannot-dereference-rawptr.yo:2:9: ERROR: Cannot dereference raw pointer
 
 :b testcase 35
 functions/no-arguments-no-return.yo

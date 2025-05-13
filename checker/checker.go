@@ -81,7 +81,7 @@ func typeAssertArith(n node.Node) node.Type {
 }
 
 func typeIsScalar(t node.Type) bool {
-	return t.Kind == node.TypeBool || typeKindIsInteger(t.Kind) || t.Ref != 0
+	return t.Kind == node.TypeBool || t.Kind == node.TypeRawptr || typeKindIsInteger(t.Kind) || t.Ref != 0
 }
 
 func typeAssertScalar(n node.Node) node.Type {
@@ -106,7 +106,15 @@ func typeAssertCastable(cast node.Node, from node.Node, to node.Node) node.Type 
 		// Function -> *
 		// *        -> Function
 		func(from node.Type, to node.Type) bool {
-			return from.Kind == node.TypeFn || to.Kind == node.TypeFn
+			if from.Kind == node.TypeFn {
+				return true
+			}
+
+			if to.Kind == node.TypeFn {
+				return true
+			}
+
+			return false
 		},
 
 		// Boolean -> Pointer
@@ -206,6 +214,9 @@ func (c *Context) checkType(n node.Node) {
 
 		case "bool":
 			n.Type = node.Type{Kind: node.TypeBool}
+
+		case "rawptr":
+			n.Type = node.Type{Kind: node.TypeRawptr}
 
 		default:
 			errorUndefined(n, "type")
@@ -400,12 +411,21 @@ func (c *Context) Check(n node.Node) {
 
 			operandType := n.Operand.GetType()
 			if operandType.Ref == 0 {
-				fmt.Fprintf(
-					os.Stderr,
-					"%s: ERROR: Expected pointer, got %s\n",
-					n.Operand.Literal().Pos,
-					operandType,
-				)
+				if operandType.Kind == node.TypeRawptr {
+					fmt.Fprintf(
+						os.Stderr,
+						"%s: ERROR: Cannot dereference raw pointer\n",
+						n.Operand.Literal().Pos,
+					)
+				} else {
+					fmt.Fprintf(
+						os.Stderr,
+						"%s: ERROR: Expected pointer, got %s\n",
+						n.Operand.Literal().Pos,
+						operandType,
+					)
+				}
+
 				os.Exit(1)
 			}
 
