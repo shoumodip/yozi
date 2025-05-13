@@ -335,8 +335,11 @@ func (l *Lexer) Next() token.Token {
 
 		tok.Str = string(l.bytes[head:l.head])
 		switch tok.Str {
+		case "#alloc":
+			tok.Kind = token.DebugAlloc
+
 		case "#print":
-			tok.Kind = token.Print
+			tok.Kind = token.DebugPrint
 
 		default:
 			fmt.Fprintf(

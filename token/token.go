@@ -75,7 +75,8 @@ const (
 	Fn
 	Let
 
-	Print
+	DebugAlloc
+	DebugPrint
 
 	COUNT
 )
@@ -138,7 +139,8 @@ var Names = [COUNT]string{
 	Fn:  "'fn'",
 	Let: "'let'",
 
-	Print: "'print'",
+	DebugAlloc: "'#alloc'",
+	DebugPrint: "'#print'",
 }
 
 type Token struct {

@@ -1,4 +1,4 @@
-:i count 61
+:i count 62
 :b testcase 23
 integers/arithmetics.yo
 :i returncode 0
@@ -346,6 +346,23 @@ pointers/arithmetic.yo
 :i returncode 0
 :b stdout 2
 1
+
+:b stderr 0
+
+:b testcase 23
+pointers/debug-alloc.yo
+:i returncode 0
+:b stdout 25
+0
+2
+4
+6
+8
+10
+12
+14
+16
+18
 
 :b stderr 0
 

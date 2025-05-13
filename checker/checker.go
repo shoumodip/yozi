@@ -127,11 +127,17 @@ func typeAssertCastable(cast node.Node, from node.Node, to node.Node) node.Type 
 		// !64-bit Integer -> Pointer
 		// Pointer         -> !64-bit Integer
 		func(from node.Type, to node.Type) bool {
-			if to.Ref != 0 && from.Ref == 0 && from.Kind != node.TypeI64 && from.Kind != node.TypeU64 {
+			if to.Ref != 0 && from.Ref == 0 &&
+				from.Kind != node.TypeI64 &&
+				from.Kind != node.TypeU64 &&
+				from.Kind != node.TypeRawptr {
 				return true
 			}
 
-			if from.Ref != 0 && to.Ref == 0 && to.Kind != node.TypeI64 && to.Kind != node.TypeU64 {
+			if from.Ref != 0 && to.Ref == 0 &&
+				to.Kind != node.TypeI64 &&
+				to.Kind != node.TypeU64 &&
+				to.Kind != node.TypeRawptr {
 				return true
 			}
 
@@ -494,9 +500,19 @@ func (c *Context) Check(n node.Node) {
 			panic("unreachable")
 		}
 
-	case *node.Print:
+	case *node.Debug:
 		c.Check(n.Operand)
-		typeAssertScalar(n.Operand)
+		switch n.Token.Kind {
+		case token.DebugAlloc:
+			typeAssert(n.Operand, node.Type{Kind: node.TypeI64})
+			n.Type = node.Type{Kind: node.TypeRawptr}
+
+		case token.DebugPrint:
+			typeAssertScalar(n.Operand)
+
+		default:
+			panic("unreachable")
+		}
 
 	case *node.Block:
 		scopeStart := len(c.locals)

@@ -158,6 +158,14 @@ func (p *Parser) parseExpr(mbp int) node.Node {
 		n = p.parseExpr(powerSet)
 		p.lexer.Expect(token.RParen)
 
+	case token.DebugAlloc:
+		p.lexer.Expect(token.LParen)
+		n = &node.Debug{
+			Token:   tok,
+			Operand: p.parseExpr(powerSet),
+		}
+		p.lexer.Expect(token.RParen)
+
 	default:
 		if tok.IsInteger() {
 			n = &node.Atom{Token: tok}
@@ -235,9 +243,9 @@ func (p *Parser) localAssert(tok token.Token, local bool) {
 // @TokenKind
 func (p *Parser) parseStmt() node.Node {
 	switch tok := p.lexer.Next(); tok.Kind {
-	case token.Print:
+	case token.DebugPrint:
 		p.localAssert(tok, true)
-		return &node.Print{
+		return &node.Debug{
 			Token:   tok,
 			Operand: p.parseExpr(powerSet),
 		}
