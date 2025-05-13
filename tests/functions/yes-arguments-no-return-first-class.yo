@@ -3,8 +3,8 @@ fn mapInt(x i64, f fn (i64)) {
 }
 
 fn showTwice(x i64) {
-    print x
-    print x
+    #print x
+    #print x
 }
 
 fn main() {

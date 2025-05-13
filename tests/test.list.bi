@@ -1,4 +1,4 @@
-:i count 60
+:i count 62
 :b testcase 23
 integers/arithmetics.yo
 :i returncode 0
@@ -186,7 +186,7 @@ global-variables/error-undefined.yo
 :b stdout 0
 
 :b stderr 76
-global-variables/error-undefined.yo:2:11: ERROR: Undefined identifier 'foo'
+global-variables/error-undefined.yo:2:12: ERROR: Undefined identifier 'foo'
 
 :b testcase 38
 global-variables/error-redefinition.yo
@@ -282,7 +282,7 @@ local-variables/error-use-outside-scope.yo
 :b stdout 0
 
 :b stderr 81
-local-variables/error-use-outside-scope.yo:7:11: ERROR: Undefined identifier 'x'
+local-variables/error-use-outside-scope.yo:7:12: ERROR: Undefined identifier 'x'
 
 :b testcase 61
 local-variables/error-use-outside-scope-despite-same-depth.yo
@@ -290,7 +290,7 @@ local-variables/error-use-outside-scope-despite-same-depth.yo
 :b stdout 0
 
 :b stderr 100
-local-variables/error-use-outside-scope-despite-same-depth.yo:6:15: ERROR: Undefined identifier 'x'
+local-variables/error-use-outside-scope-despite-same-depth.yo:6:16: ERROR: Undefined identifier 'x'
 
 :b testcase 69
 local-variables/error-assignment-does-not-match-type-in-definition.yo
@@ -349,6 +349,23 @@ pointers/arithmetic.yo
 
 :b stderr 0
 
+:b testcase 23
+pointers/debug-alloc.yo
+:i returncode 0
+:b stdout 25
+0
+2
+4
+6
+8
+10
+12
+14
+16
+18
+
+:b stderr 0
+
 :b testcase 46
 pointers/error-dereference-expected-pointer.yo
 :i returncode 1
@@ -364,6 +381,14 @@ pointers/error-reference-not-memory.yo
 
 :b stderr 96
 pointers/error-reference-not-memory.yo:2:6: ERROR: Cannot take reference of value not in memory
+
+:b testcase 43
+pointers/error-cannot-dereference-rawptr.yo
+:i returncode 1
+:b stdout 0
+
+:b stderr 87
+pointers/error-cannot-dereference-rawptr.yo:2:9: ERROR: Cannot dereference raw pointer
 
 :b testcase 35
 functions/no-arguments-no-return.yo

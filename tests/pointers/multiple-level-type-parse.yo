@@ -3,7 +3,7 @@ fn main() {
     let y &i64 = &x
     let z &&i64 = &y
 
-    print x
+    #print x
     **z = 420
-    print x
+    #print x
 }

@@ -81,7 +81,7 @@ func typeAssertArith(n node.Node) node.Type {
 }
 
 func typeIsScalar(t node.Type) bool {
-	return t.Kind == node.TypeBool || typeKindIsInteger(t.Kind) || t.Ref != 0
+	return t.Kind == node.TypeBool || t.Kind == node.TypeRawptr || typeKindIsInteger(t.Kind) || t.Ref != 0
 }
 
 func typeAssertScalar(n node.Node) node.Type {
@@ -106,7 +106,15 @@ func typeAssertCastable(cast node.Node, from node.Node, to node.Node) node.Type 
 		// Function -> *
 		// *        -> Function
 		func(from node.Type, to node.Type) bool {
-			return from.Kind == node.TypeFn || to.Kind == node.TypeFn
+			if from.Kind == node.TypeFn {
+				return true
+			}
+
+			if to.Kind == node.TypeFn {
+				return true
+			}
+
+			return false
 		},
 
 		// Boolean -> Pointer
@@ -119,11 +127,17 @@ func typeAssertCastable(cast node.Node, from node.Node, to node.Node) node.Type 
 		// !64-bit Integer -> Pointer
 		// Pointer         -> !64-bit Integer
 		func(from node.Type, to node.Type) bool {
-			if to.Ref != 0 && from.Ref == 0 && from.Kind != node.TypeI64 && from.Kind != node.TypeU64 {
+			if to.Ref != 0 && from.Ref == 0 &&
+				from.Kind != node.TypeI64 &&
+				from.Kind != node.TypeU64 &&
+				from.Kind != node.TypeRawptr {
 				return true
 			}
 
-			if from.Ref != 0 && to.Ref == 0 && to.Kind != node.TypeI64 && to.Kind != node.TypeU64 {
+			if from.Ref != 0 && to.Ref == 0 &&
+				to.Kind != node.TypeI64 &&
+				to.Kind != node.TypeU64 &&
+				to.Kind != node.TypeRawptr {
 				return true
 			}
 
@@ -206,6 +220,9 @@ func (c *Context) checkType(n node.Node) {
 
 		case "bool":
 			n.Type = node.Type{Kind: node.TypeBool}
+
+		case "rawptr":
+			n.Type = node.Type{Kind: node.TypeRawptr}
 
 		default:
 			errorUndefined(n, "type")
@@ -400,12 +417,21 @@ func (c *Context) Check(n node.Node) {
 
 			operandType := n.Operand.GetType()
 			if operandType.Ref == 0 {
-				fmt.Fprintf(
-					os.Stderr,
-					"%s: ERROR: Expected pointer, got %s\n",
-					n.Operand.Literal().Pos,
-					operandType,
-				)
+				if operandType.Kind == node.TypeRawptr {
+					fmt.Fprintf(
+						os.Stderr,
+						"%s: ERROR: Cannot dereference raw pointer\n",
+						n.Operand.Literal().Pos,
+					)
+				} else {
+					fmt.Fprintf(
+						os.Stderr,
+						"%s: ERROR: Expected pointer, got %s\n",
+						n.Operand.Literal().Pos,
+						operandType,
+					)
+				}
+
 				os.Exit(1)
 			}
 
@@ -474,9 +500,19 @@ func (c *Context) Check(n node.Node) {
 			panic("unreachable")
 		}
 
-	case *node.Print:
+	case *node.Debug:
 		c.Check(n.Operand)
-		typeAssertScalar(n.Operand)
+		switch n.Token.Kind {
+		case token.DebugAlloc:
+			typeAssert(n.Operand, node.Type{Kind: node.TypeU64})
+			n.Type = node.Type{Kind: node.TypeRawptr}
+
+		case token.DebugPrint:
+			typeAssertScalar(n.Operand)
+
+		default:
+			panic("unreachable")
+		}
 
 	case *node.Block:
 		scopeStart := len(c.locals)

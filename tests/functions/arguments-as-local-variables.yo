@@ -1,16 +1,16 @@
 fn foo(x i64) {
-    print x
+    #print x
     x = 420
-    print x
+    #print x
 }
 
 fn bar(x i64) {
-    print x
+    #print x
     {
         let p = &x
         *p = 420
     }
-    print x
+    #print x
 }
 
 fn main() {

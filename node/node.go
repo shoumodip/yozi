@@ -107,26 +107,26 @@ func (b *Binary) IsMemory() bool {
 	return b.Memory
 }
 
-type Print struct {
+type Debug struct {
 	Token token.Token
 	Type  Type
 
 	Operand Node
 }
 
-func (p *Print) Literal() token.Token {
-	return p.Token
+func (d *Debug) Literal() token.Token {
+	return d.Token
 }
 
-func (p *Print) GetType() Type {
-	return p.Type
+func (d *Debug) GetType() Type {
+	return d.Type
 }
 
-func (p *Print) SetType(t Type) {
-	p.Type = t
+func (d *Debug) SetType(t Type) {
+	d.Type = t
 }
 
-func (*Print) IsMemory() bool {
+func (*Debug) IsMemory() bool {
 	return false
 }
 

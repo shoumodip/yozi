@@ -7,5 +7,5 @@ fn double(x i64) i64 {
 }
 
 fn main() {
-    print mapInt(210, double) // Absolute cinema
+    #print mapInt(210, double) // Absolute cinema
 }

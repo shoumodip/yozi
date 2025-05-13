@@ -54,6 +54,9 @@ func llvmFormatType(t node.Type) string {
 		}
 		sb.WriteString(")*")
 
+	case node.TypeRawptr:
+		sb.WriteString("i8*")
+
 	default:
 		panic("unreachable")
 	}
@@ -176,7 +179,6 @@ func (c *Compiler) castOp(from node.Node, to node.Node) string {
 		return fromExpr
 	}
 
-	result := c.valueNew()
 	command := ""
 
 	llvmTo := llvmFormatType(toType)
@@ -204,8 +206,8 @@ func (c *Compiler) castOp(from node.Node, to node.Node) string {
 	toIntSize := intSize(toType.Kind)
 	fromIntSize := intSize(fromType.Kind)
 
-	if fromType.Ref != 0 {
-		if toType.Ref != 0 {
+	if fromType.Ref != 0 || fromType.Kind == node.TypeRawptr {
+		if toType.Ref != 0 || toType.Kind == node.TypeRawptr {
 			// Pointer -> Pointer
 			command = "bitcast"
 		} else {
@@ -221,10 +223,15 @@ func (c *Compiler) castOp(from node.Node, to node.Node) string {
 			command = "inttoptr"
 		} else if toType.Kind == node.TypeBool {
 			// Integer -> Boolean
+			result := c.valueNew()
 			fmt.Fprintf(c.out, "    %s = icmp ne %s %s, 0\n", result, llvmFrom, fromExpr)
 			return result
 		} else if toIntSize != -1 {
 			// Integer -> Integer
+			if fromIntSize == toIntSize {
+				return fromExpr
+			}
+
 			if fromIntSize < toIntSize {
 				// Extend
 				if fromType.IsSignedInt() {
@@ -243,6 +250,7 @@ func (c *Compiler) castOp(from node.Node, to node.Node) string {
 		panic("unreachable")
 	}
 
+	result := c.valueNew()
 	fmt.Fprintf(c.out, "    %s = %s %s %s to %s\n", result, command, llvmFrom, fromExpr, llvmTo)
 	return result
 }
@@ -453,6 +461,42 @@ func (c *Compiler) compileExpr(n node.Node, ref bool) string {
 			panic("unreachable")
 		}
 
+	case *node.Debug:
+		operand := c.compileExpr(n.Operand, false)
+
+		switch n.Token.Kind {
+		case token.DebugAlloc:
+			result := c.valueNew()
+			fmt.Fprintf(
+				c.out,
+				"    %s = call i8* (i64) @malloc(i64 %s)\n",
+				result,
+				operand,
+			)
+			return result
+
+		case token.DebugPrint:
+			fmtPointer := c.valueNew()
+			fmt.Fprintf(
+				c.out,
+				"    %s = getelementptr [5 x i8], [5 x i8]* @.print, i64 0, i64 0\n",
+				fmtPointer,
+			)
+
+			c.valueNew() // For the call
+			fmt.Fprintf(
+				c.out,
+				"    call i32 (i8*, ...) @printf(i8* %s, %s %s)\n",
+				fmtPointer,
+				llvmFormatType(n.Operand.GetType()),
+				operand,
+			)
+			return ""
+
+		default:
+			panic("unreachable")
+		}
+
 	default:
 		panic("unreachable")
 	}
@@ -461,25 +505,6 @@ func (c *Compiler) compileExpr(n node.Node, ref bool) string {
 // @NodeKind
 func (c *Compiler) compileStmt(n node.Node) {
 	switch n := n.(type) {
-	case *node.Print:
-		operand := c.compileExpr(n.Operand, false)
-
-		fmtPointer := c.valueNew()
-		fmt.Fprintf(
-			c.out,
-			"    %s = getelementptr [5 x i8], [5 x i8]* @.print, i64 0, i64 0\n",
-			fmtPointer,
-		)
-
-		c.valueNew() // For the call
-		fmt.Fprintf(
-			c.out,
-			"    call i32 (i8*, ...) @printf(i8* %s, %s %s)\n",
-			fmtPointer,
-			llvmFormatType(n.Operand.GetType()),
-			operand,
-		)
-
 	case *node.Block:
 		for _, stmt := range n.Nodes {
 			c.compileStmt(stmt)
@@ -535,7 +560,7 @@ func (c *Compiler) compileStmt(n node.Node) {
 			assign := c.compileExpr(n.Assign, false)
 			fmt.Fprintf(c.out, "    store %s %s, %s* %s\n", llvmType, assign, llvmType, n.Token.Str)
 		} else {
-			if n.Type.Ref != 0 || n.Type.Kind == node.TypeFn {
+			if n.Type.Ref != 0 || n.Type.Kind == node.TypeFn || n.Type.Kind == node.TypeRawptr {
 				fmt.Fprintf(c.out, "    store %s null, %s* %s\n", llvmType, llvmType, n.Token.Str)
 			} else {
 				fmt.Fprintf(c.out, "    store %s 0, %s* %s\n", llvmType, llvmType, n.Token.Str)
@@ -707,7 +732,7 @@ func Program(context *checker.Context, exePath string) {
 				llvmFormatType(globalType),
 			)
 
-			if globalType.Ref != 0 || globalType.Kind == node.TypeFn {
+			if globalType.Ref != 0 || globalType.Kind == node.TypeFn || globalType.Kind == node.TypeRawptr {
 				fmt.Fprintf(compiler.out, "null\n")
 			} else {
 				fmt.Fprintf(compiler.out, "0\n")
@@ -721,6 +746,7 @@ func Program(context *checker.Context, exePath string) {
 	// @Temporary
 	fmt.Fprintln(compiler.out, `@.print = private unnamed_addr constant [5 x i8] c"%ld\0A\00"`)
 	fmt.Fprintln(compiler.out, "declare i32 @printf(i8*, ...)")
+	fmt.Fprintln(compiler.out, "declare i8* @malloc(i64)")
 
 	fmt.Fprintln(compiler.out, "define i32 @main() {")
 	fmt.Fprintln(compiler.out, "$0:")

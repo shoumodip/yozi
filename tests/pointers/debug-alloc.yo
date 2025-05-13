@@ -1,0 +1,22 @@
+fn iter(xs &i64, count u64, f fn (it &i64, it_index u64)) {
+    let i u64 = 0
+    while i < count {
+        f(xs + (i * 8) as &i64, i)
+        i = i + 1
+    }
+}
+
+fn fill(it &i64, it_index u64) {
+    *it = it_index as i64 * 2
+}
+
+fn print(it &i64, it_index u64) {
+    #print *it
+}
+
+fn main() {
+    let count u64 = 10
+    let memory = #alloc(count * 8) as &i64
+    iter(memory, count, fill)
+    iter(memory, count, print)
+}

@@ -22,11 +22,11 @@ things can and will change at any moment.**
 ```rust
 // This is a comment!
 fn main() {
-    print 69
-    print 420
+    #print 69
+    #print 420
 
-    print true
-    print false
+    #print true
+    #print false
 }
 ```
 
@@ -42,7 +42,7 @@ Integer types supported:
 
 ```rust
 fn main() {
-    print 69u32 // Integer literals can be suffixed with their type
+    #print 69u32 // Integer literals can be suffixed with their type
 }
 ```
 
@@ -52,22 +52,22 @@ Typical arithmetic, bitwise, and logical operators work as expected.
 ```rust
 fn main() {
     if true {
-        print 69
-        print 420
+        #print 69
+        #print 420
     }
 
     if false {
-        print 69
+        #print 69
     } else {
-        print 1337
+        #print 1337
     }
 
     if false {
-        print 69
+        #print 69
     } else if true {
-        print 80085
+        #print 80085
     } else {
-        print 420
+        #print 420
     }
 }
 ```
@@ -86,13 +86,13 @@ fn main() {
     globalVar3 = 420
     localVar3 = 1337
 
-    print globalVar1
-    print globalVar2
-    print globalVar3
+    #print globalVar1
+    #print globalVar2
+    #print globalVar3
 
-    print localVar1
-    print localVar2
-    print localVar3
+    #print localVar1
+    #print localVar2
+    #print localVar3
 }
 ```
 
@@ -101,10 +101,10 @@ fn main() {
 fn main() {
     {
         let x = 69
-        print x
+        #print x
     }
 
-    print x // ERROR: Undefined identifier 'x'
+    #print x // ERROR: Undefined identifier 'x'
 }
 ```
 
@@ -112,10 +112,10 @@ fn main() {
 ```rust
 fn main() {
     let x = 69
-    print x
+    #print x
 
     let x = x == 69
-    print x
+    #print x
 }
 ```
 
@@ -124,7 +124,7 @@ fn main() {
 fn main() {
     let i = 0
     while i < 10 {
-        print i
+        #print i
         i = i + 1
     }
 }
@@ -141,7 +141,7 @@ fn double(x i64) i64 {
 }
 
 fn printNum(x i64) {
-    print x
+    #print x
 }
 
 fn main() {
@@ -162,7 +162,7 @@ fn factorial(n i64) i64 {
 fn main() {
     let i = 1
     while i <= 10 {
-        print factorial(i)
+        #print factorial(i)
         i = i + 1
     }
 }
@@ -179,7 +179,7 @@ fn double(x i64) i64 {
 }
 
 fn main() {
-    print apply(210, double)
+    #print apply(210, double)
 }
 ```
 
@@ -193,7 +193,7 @@ fn main() {
     let x = 68
     inc(&x)
 
-    print x
+    #print x
 }
 ```
 
@@ -202,9 +202,9 @@ fn main() {
 fn main() {
     let x = 69
     if x as bool {
-        print true as i64
+        #print true as i64
     } else {
-        print 1337 as &bool
+        #print 1337 as &bool
     }
 }
 ```

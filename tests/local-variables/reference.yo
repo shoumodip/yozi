@@ -4,8 +4,8 @@ fn foo(x &i64) {
 
 fn main() {
     let number = 69
-    print number
+    #print number
 
     foo(&number)
-    print number
+    #print number
 }

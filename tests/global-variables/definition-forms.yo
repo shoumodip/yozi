@@ -7,7 +7,7 @@ fn main() {
     y = 420
     *p = 1337
 
-    print x
-    print y
-    print z
+    #print x
+    #print y
+    #print z
 }

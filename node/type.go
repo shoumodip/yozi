@@ -18,6 +18,7 @@ const (
 	TypeU64
 
 	TypeFn
+	TypeRawptr
 )
 
 type Type struct {
@@ -81,6 +82,9 @@ func (t Type) String() string {
 			sb.WriteByte(' ')
 			sb.WriteString(fn.Return.GetType().String())
 		}
+
+	case TypeRawptr:
+		sb.WriteString("rawptr")
 	}
 
 	return sb.String()

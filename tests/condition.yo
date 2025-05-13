@@ -1,29 +1,29 @@
 fn main() {
     if true {
-        print 1
+        #print 1
     }
 
     if false {
-        print 1
+        #print 1
     }
 
     if true {
-        print 2
+        #print 2
     } else {
-        print 3
+        #print 3
     }
 
     if false {
-        print 2
+        #print 2
     } else {
-        print 3
+        #print 3
     }
 
     if false {
-        print 3
+        #print 3
     } else if true {
-        print 4
+        #print 4
     } else {
-        print 5
+        #print 5
     }
 }

@@ -30,8 +30,10 @@ pointers/reference-dereference.yo
 pointers/reference-dereference-multiple.yo
 pointers/multiple-level-type-parse.yo
 pointers/arithmetic.yo
+pointers/debug-alloc.yo
 pointers/error-dereference-expected-pointer.yo
 pointers/error-reference-not-memory.yo
+pointers/error-cannot-dereference-rawptr.yo
 functions/no-arguments-no-return.yo
 functions/no-arguments-no-return-first-class.yo
 functions/yes-arguments-no-return.yo

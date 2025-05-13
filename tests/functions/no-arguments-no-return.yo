@@ -1,6 +1,6 @@
 fn hehe() {
-    print 69
-    print 420
+    #print 69
+    #print 420
 }
 
 fn main() {

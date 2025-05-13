@@ -1,7 +1,7 @@
 fn main() {
     let x = 69
-    print x
+    #print x
 
     x = 420
-    print x
+    #print x
 }
