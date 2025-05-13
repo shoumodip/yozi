@@ -1,6 +1,8 @@
 # Yozi
 Compiler in Go
 
+**NOTE: Due to technical difficulties with the C GO ABI, I am unable to maintain this project anymore. Therefore I am archiving this repo. I will rewrite this "language" in C, and maybe rebrand it under https://github.com/shoumodip/glos**
+
 ## Quick Start
 Install [`clang`](https://clang.llvm.org/)
 
