@@ -504,7 +504,7 @@ func (c *Context) Check(n node.Node) {
 		c.Check(n.Operand)
 		switch n.Token.Kind {
 		case token.DebugAlloc:
-			typeAssert(n.Operand, node.Type{Kind: node.TypeI64})
+			typeAssert(n.Operand, node.Type{Kind: node.TypeU64})
 			n.Type = node.Type{Kind: node.TypeRawptr}
 
 		case token.DebugPrint:

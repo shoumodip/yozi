@@ -179,7 +179,6 @@ func (c *Compiler) castOp(from node.Node, to node.Node) string {
 		return fromExpr
 	}
 
-	result := c.valueNew()
 	command := ""
 
 	llvmTo := llvmFormatType(toType)
@@ -224,10 +223,15 @@ func (c *Compiler) castOp(from node.Node, to node.Node) string {
 			command = "inttoptr"
 		} else if toType.Kind == node.TypeBool {
 			// Integer -> Boolean
+			result := c.valueNew()
 			fmt.Fprintf(c.out, "    %s = icmp ne %s %s, 0\n", result, llvmFrom, fromExpr)
 			return result
 		} else if toIntSize != -1 {
 			// Integer -> Integer
+			if fromIntSize == toIntSize {
+				return fromExpr
+			}
+
 			if fromIntSize < toIntSize {
 				// Extend
 				if fromType.IsSignedInt() {
@@ -246,6 +250,7 @@ func (c *Compiler) castOp(from node.Node, to node.Node) string {
 		panic("unreachable")
 	}
 
+	result := c.valueNew()
 	fmt.Fprintf(c.out, "    %s = %s %s %s to %s\n", result, command, llvmFrom, fromExpr, llvmTo)
 	return result
 }
