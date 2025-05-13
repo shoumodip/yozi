@@ -1,6 +1,10 @@
 package token
 
-import "fmt"
+import (
+	"fmt"
+	"os"
+	"strconv"
+)
 
 type Pos struct {
 	Path string
@@ -16,7 +20,13 @@ type Kind = byte
 
 const (
 	Eof Kind = iota
-	Int
+
+	I8
+	I16
+	I32
+	I64
+	Int // Untyped
+
 	Bool
 	Ident
 
@@ -68,8 +78,14 @@ const (
 
 // @TokenKind
 var Names = [COUNT]string{
-	Eof:   "end of file",
-	Int:   "integer",
+	Eof: "end of file",
+
+	I8:  "integer",
+	I16: "integer",
+	I32: "integer",
+	I64: "integer",
+	Int: "integer",
+
 	Bool:  "boolean",
 	Ident: "identifier",
 
@@ -124,4 +140,31 @@ type Token struct {
 	OnNewline bool
 
 	I64 int64
+}
+
+// @TokenKind
+func (t Token) IsInteger() bool {
+	switch t.Kind {
+	case I8, I16, I32, I64, Int:
+		return true
+
+	default:
+		return false
+	}
+}
+
+func (t *Token) ParseInteger(bits int) {
+	value, err := strconv.ParseInt(t.Str, 10, bits)
+	if err != nil {
+		fmt.Fprintf(
+			os.Stderr,
+			"%s: ERROR: Integer literal '%s' is too large for type i%d\n",
+			t.Pos,
+			t.Str,
+			bits,
+		)
+		os.Exit(1)
+	}
+
+	t.I64 = value
 }

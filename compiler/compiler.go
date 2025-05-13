@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"slices"
 	"strings"
 	"yozi/checker"
 	"yozi/node"
@@ -25,6 +26,15 @@ func llvmFormatType(t node.Type) string {
 	switch t.Kind {
 	case node.TypeBool:
 		sb.WriteString("i1")
+
+	case node.TypeI8:
+		sb.WriteString("i8")
+
+	case node.TypeI16:
+		sb.WriteString("i16")
+
+	case node.TypeI32:
+		sb.WriteString("i32")
 
 	case node.TypeI64:
 		sb.WriteString("i64")
@@ -157,13 +167,76 @@ func (c *Compiler) binaryLogicalOp(n *node.Binary) string {
 	return result
 }
 
+// @TypeKind
+func (c *Compiler) castOp(from node.Node, to node.Node) string {
+	fromExpr := c.compileExpr(from, false)
+
+	toType := to.GetType()
+	fromType := from.GetType()
+	if fromType.Equal(toType) {
+		return fromExpr
+	}
+
+	result := c.valueNew()
+	command := ""
+
+	llvmTo := llvmFormatType(toType)
+	llvmFrom := llvmFormatType(fromType)
+
+	signedInts := []node.TypeKind{node.TypeI8, node.TypeI16, node.TypeI32, node.TypeI64}
+	toSignedIntIndex := slices.Index(signedInts, toType.Kind)
+	fromSignedIntIndex := slices.Index(signedInts, fromType.Kind)
+
+	if fromType.Ref != 0 {
+		if toType.Ref != 0 {
+			// Pointer -> Pointer
+			command = "bitcast"
+		} else {
+			// Pointer -> Integer
+			command = "ptrtoint"
+		}
+	} else if fromType.Kind == node.TypeBool {
+		// Boolean -> Integer
+		command = "zext"
+	} else if fromSignedIntIndex != -1 {
+		if toType.Ref != 0 {
+			// Integer -> Pointer
+			command = "inttoptr"
+		} else if toType.Kind == node.TypeBool {
+			// Integer -> Boolean
+			fmt.Fprintf(c.out, "    %s = icmp ne %s %s, 0\n", result, llvmFrom, fromExpr)
+			return result
+		} else if toSignedIntIndex != -1 {
+			// Integer -> Integer
+			if fromSignedIntIndex < toSignedIntIndex {
+				// Extend
+				command = "sext"
+			} else {
+				// Truncate
+				command = "trunc"
+			}
+		} else {
+			panic("unreachable")
+		}
+	} else {
+		panic("unreachable")
+	}
+
+	fmt.Fprintf(c.out, "    %s = %s %s %s to %s\n", result, command, llvmFrom, fromExpr, llvmTo)
+	return result
+}
+
 // @NodeKind
 func (c *Compiler) compileExpr(n node.Node, ref bool) string {
 	switch n := n.(type) {
 	case *node.Atom:
+		if n.Token.IsInteger() {
+			return fmt.Sprintf("%d", n.Token.I64)
+		}
+
 		// @TokenKind
 		switch n.Token.Kind {
-		case token.Int, token.Bool:
+		case token.Bool:
 			return fmt.Sprintf("%d", n.Token.I64)
 
 		case token.Ident:
@@ -328,57 +401,8 @@ func (c *Compiler) compileExpr(n node.Node, ref bool) string {
 		case token.Ne:
 			return c.binaryOp(n, "icmp ne")
 
-		case token.As: // @TypeKind
-			fromExpr := c.compileExpr(n.Lhs, false)
-
-			to := n.Rhs.GetType()
-			from := n.Lhs.GetType()
-			if from.Equal(to) {
-				return fromExpr
-			}
-
-			result := c.valueNew()
-			command := ""
-
-			llvmTo := llvmFormatType(to)
-			llvmFrom := llvmFormatType(from)
-			if from.Ref != 0 {
-				if to.Ref != 0 {
-					// Pointer -> Pointer
-					command = "bitcast"
-				} else {
-					// Pointer -> Integer
-					command = "ptrtoint"
-				}
-			} else {
-				switch from.Kind {
-				case node.TypeBool:
-					// Boolean -> Integer
-					command = "zext"
-
-				case node.TypeI64:
-					if to.Ref != 0 {
-						// Integer -> Pointer
-						command = "inttoptr"
-					} else {
-						switch to.Kind {
-						case node.TypeBool:
-							// Integer -> Boolean
-							fmt.Fprintf(c.out, "    %s = icmp ne %s %s, 0\n", result, llvmFrom, fromExpr)
-							return result
-
-						default:
-							panic("unreachable")
-						}
-					}
-
-				default:
-					panic("unreachable")
-				}
-			}
-
-			fmt.Fprintf(c.out, "    %s = %s %s %s to %s\n", result, command, llvmFrom, fromExpr, llvmTo)
-			return result
+		case token.As:
+			return c.castOp(n.Lhs, n.Rhs)
 
 		default:
 			panic("unreachable")

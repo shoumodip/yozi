@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"slices"
-	"strconv"
 	"yozi/token"
 )
 
@@ -16,8 +15,12 @@ func isAlpha(ch byte) bool {
 	return ('a' <= ch && ch <= 'z') || ('A' <= ch && ch <= 'Z')
 }
 
+func isAlnum(ch byte) bool {
+	return isAlpha(ch) || isDigit(ch)
+}
+
 func isIdent(ch byte) bool {
-	return isAlpha(ch) || isDigit(ch) || ch == '_'
+	return isAlnum(ch) || ch == '_'
 }
 
 func isPrint(ch byte) bool {
@@ -75,9 +78,9 @@ func (l *Lexer) nextChar() {
 	}
 }
 
-func (l *Lexer) peekChar() byte {
-	if l.head+1 < l.size {
-		return l.bytes[l.head+1]
+func (l *Lexer) peekChar(offset int) byte {
+	if l.head+offset < l.size {
+		return l.bytes[l.head+offset]
 	}
 
 	return 0
@@ -108,7 +111,7 @@ func (l *Lexer) skipWhitespace() {
 			l.onNewline = true
 
 		case '/':
-			if l.peekChar() == '/' {
+			if l.peekChar(1) == '/' {
 				for l.head < l.size && l.ch != '\n' {
 					l.nextChar()
 				}
@@ -153,24 +156,55 @@ func (l *Lexer) Next() token.Token {
 	}
 
 	if isDigit(l.ch) {
-		tok.Kind = token.Int
 		for l.head < l.size && isDigit(l.ch) {
 			l.nextChar()
 		}
 
-		tok.Str = string(l.bytes[head:l.head])
-		value, err := strconv.ParseInt(tok.Str, 10, 64)
-		if err != nil {
-			fmt.Fprintf(
-				os.Stderr,
-				"%s: ERROR: Integer literal '%s' is too large\n",
-				tok.Pos,
-				tok.Str,
-			)
-			os.Exit(1)
+		bits := 64
+		numStr := string(l.bytes[head:l.head])
+
+		// TODO: unsigned integer literal
+		if l.ch == 'i' {
+			suffixPos := l.pos
+			suffixStart := l.head
+
+			l.nextChar()
+			for l.head < l.size && isDigit(l.ch) {
+				l.nextChar()
+			}
+
+			switch suffix := string(l.bytes[suffixStart:l.head]); suffix {
+			case "i8":
+				tok.Kind = token.I8
+				bits = 8
+
+			case "i16":
+				tok.Kind = token.I16
+				bits = 16
+
+			case "i32":
+				tok.Kind = token.I32
+				bits = 32
+
+			case "i64":
+				tok.Kind = token.I64
+				bits = 64
+
+			default:
+				fmt.Fprintf(
+					os.Stderr,
+					"%s: ERROR: Invalid suffix '%s' to integer literal\n",
+					suffixPos,
+					suffix,
+				)
+				os.Exit(1)
+			}
+		} else {
+			tok.Kind = token.Int
 		}
 
-		tok.I64 = value
+		tok.Str = numStr
+		tok.ParseInteger(bits)
 		return tok
 	}
 

@@ -1,6 +1,6 @@
-:i count 55
-:b testcase 14
-arithmetics.yo
+:i count 59
+:b testcase 23
+integers/arithmetics.yo
 :i returncode 0
 :b stdout 70
 69
@@ -32,6 +32,44 @@ arithmetics.yo
 420
 
 :b stderr 0
+
+:b testcase 26
+integers/typed-literals.yo
+:i returncode 0
+:b stdout 18
+69
+420
+1337
+80085
+
+:b stderr 0
+
+:b testcase 37
+integers/untyped-literal-auto-cast.yo
+:i returncode 0
+:b stdout 18
+69
+420
+1337
+80085
+
+:b stderr 0
+
+:b testcase 32
+integers/error-invalid-suffix.yo
+:i returncode 1
+:b stdout 0
+
+:b stderr 85
+integers/error-invalid-suffix.yo:2:7: ERROR: Invalid suffix 'i69' to integer literal
+
+:b testcase 53
+integers/error-untyped-literal-auto-cast-too-large.yo
+:i returncode 1
+:b stdout 0
+
+:b stderr 114
+integers/error-untyped-literal-auto-cast-too-large.yo:2:16: ERROR: Integer literal '420' is too large for type i8
 
 :b testcase 11
 booleans.yo

@@ -7,9 +7,57 @@ import (
 	"yozi/token"
 )
 
+// @TypeKind
+func typeKindIsInteger(kind node.TypeKind) bool {
+	switch kind {
+	case node.TypeI8, node.TypeI16, node.TypeI32, node.TypeI64:
+		return true
+
+	default:
+		return false
+	}
+}
+
 func typeAssert(n node.Node, expected node.Type) node.Type {
 	actual := n.GetType()
 	if !actual.Equal(expected) {
+		// Auto cast untyped integer literal to typed integer
+		if expected.Ref == 0 && typeKindIsInteger(expected.Kind) {
+			// Expected typed integer
+			if atom, ok := n.(*node.Atom); ok {
+				// Got untyped integer literal
+				if atom.Token.Kind == token.Int {
+					bits := 0
+
+					// @TypeKind
+					switch expected.Kind {
+					case node.TypeI8:
+						atom.Token.Kind = token.I8
+						bits = 8
+
+					case node.TypeI16:
+						atom.Token.Kind = token.I16
+						bits = 16
+
+					case node.TypeI32:
+						atom.Token.Kind = token.I32
+						bits = 32
+
+					case node.TypeI64:
+						atom.Token.Kind = token.I64
+						bits = 64
+
+					default:
+						panic("unreachable")
+					}
+
+					atom.Type = expected
+					atom.Token.ParseInteger(bits)
+					return atom.Type
+				}
+			}
+		}
+
 		fmt.Fprintf(os.Stderr, "%s: ERROR: Expected type %s, got %s\n", n.Literal().Pos, expected, actual)
 		os.Exit(1)
 	}
@@ -19,7 +67,7 @@ func typeAssert(n node.Node, expected node.Type) node.Type {
 
 func typeAssertArith(n node.Node) node.Type {
 	actual := n.GetType()
-	if actual.Kind != node.TypeI64 && actual.Ref == 0 {
+	if !typeKindIsInteger(actual.Kind) && actual.Ref == 0 {
 		fmt.Fprintf(os.Stderr, "%s: ERROR: Expected arithmetic type, got %s\n", n.Literal().Pos, actual)
 		os.Exit(1)
 	}
@@ -28,7 +76,7 @@ func typeAssertArith(n node.Node) node.Type {
 }
 
 func typeIsScalar(t node.Type) bool {
-	return t.Kind == node.TypeBool || t.Kind == node.TypeI64 || t.Ref != 0
+	return t.Kind == node.TypeBool || typeKindIsInteger(t.Kind) || t.Ref != 0
 }
 
 func typeAssertScalar(n node.Node) node.Type {
@@ -41,6 +89,7 @@ func typeAssertScalar(n node.Node) node.Type {
 	return actual
 }
 
+// @TypeKind
 func typeAssertCastable(cast node.Node, from node.Node, to node.Node) node.Type {
 	castFailed := []func(from node.Type, to node.Type) bool{
 		// Non Scalar -> *
@@ -60,6 +109,20 @@ func typeAssertCastable(cast node.Node, from node.Node, to node.Node) node.Type 
 		func(from node.Type, to node.Type) bool {
 			boolType := node.Type{Kind: node.TypeBool}
 			return (from.Equal(boolType) && to.Ref != 0) || (to.Equal(boolType) && from.Ref != 0)
+		},
+
+		// !64-bit Integer -> Pointer
+		// Pointer         -> !64-bit Integer
+		func(from node.Type, to node.Type) bool {
+			if to.Ref != 0 && from.Ref == 0 && from.Kind != node.TypeI64 {
+				return true
+			}
+
+			if from.Ref != 0 && to.Ref == 0 && to.Kind != node.TypeI64 {
+				return true
+			}
+
+			return false
 		},
 	}
 
@@ -107,10 +170,20 @@ func NewContext() Context {
 	}
 }
 
+// @TypeKind
 func (c *Context) checkType(n node.Node) {
 	switch n := n.(type) {
 	case *node.Atom:
 		switch n.Token.Str {
+		case "i8":
+			n.Type = node.Type{Kind: node.TypeI8}
+
+		case "i16":
+			n.Type = node.Type{Kind: node.TypeI16}
+
+		case "i32":
+			n.Type = node.Type{Kind: node.TypeI32}
+
 		case "i64":
 			n.Type = node.Type{Kind: node.TypeI64}
 
@@ -214,7 +287,16 @@ func (c *Context) Check(n node.Node) {
 	case *node.Atom:
 		// @TokenKind
 		switch n.Token.Kind {
-		case token.Int:
+		case token.I8:
+			n.Type = node.Type{Kind: node.TypeI8}
+
+		case token.I16:
+			n.Type = node.Type{Kind: node.TypeI16}
+
+		case token.I32:
+			n.Type = node.Type{Kind: node.TypeI32}
+
+		case token.I64, token.Int:
 			n.Type = node.Type{Kind: node.TypeI64}
 
 		case token.Bool:

@@ -7,7 +7,12 @@ type TypeKind = byte
 const (
 	TypeUnit TypeKind = iota
 	TypeBool
+
+	TypeI8
+	TypeI16
+	TypeI32
 	TypeI64
+
 	TypeFn
 )
 
@@ -30,6 +35,15 @@ func (t Type) String() string {
 
 	case TypeBool:
 		sb.WriteString("bool")
+
+	case TypeI8:
+		sb.WriteString("i8")
+
+	case TypeI16:
+		sb.WriteString("i16")
+
+	case TypeI32:
+		sb.WriteString("i32")
 
 	case TypeI64:
 		sb.WriteString("i64")
