@@ -75,7 +75,48 @@ func (c *Compiler) binaryOp(n *node.Binary, op string) string {
 	return result
 }
 
-func (c *Compiler) shortCircuitLogicalOp(n *node.Binary) string {
+// Like binaryOp, but pointers are first cast to i64
+func (c *Compiler) binaryArithOp(n *node.Binary, op string) string {
+	lhs := c.compileExpr(n.Lhs, false)
+	rhs := c.compileExpr(n.Rhs, false)
+
+	exprType := n.Lhs.GetType()
+	tempType := "i64"
+
+	llvmType := llvmFormatType(exprType)
+	if exprType.Ref != 0 {
+		lhsTemp := c.valueNew()
+		rhsTemp := c.valueNew()
+		fmt.Fprintf(c.out, "    %s = ptrtoint %s %s to %s\n", lhsTemp, llvmType, lhs, tempType)
+		fmt.Fprintf(c.out, "    %s = ptrtoint %s %s to %s\n", rhsTemp, llvmType, rhs, tempType)
+
+		lhs = lhsTemp
+		rhs = rhsTemp
+	}
+
+	if exprType.Ref != 0 {
+		tempResult := c.valueNew()
+		fmt.Fprintf(c.out, "    %s = %s %s %s, %s\n", tempResult, op, tempType, lhs, rhs)
+
+		result := c.valueNew()
+		fmt.Fprintf(
+			c.out,
+			"    %s = inttoptr %s %s to %s\n",
+			result,
+			tempType,
+			tempResult,
+			llvmType,
+		)
+
+		return result
+	} else {
+		result := c.valueNew()
+		fmt.Fprintf(c.out, "    %s = %s %s %s, %s\n", result, op, llvmType, lhs, rhs)
+		return result
+	}
+}
+
+func (c *Compiler) binaryLogicalOp(n *node.Binary) string {
 	var shortCircuitValue int
 
 	evalRhs := c.labelNew()
@@ -232,34 +273,34 @@ func (c *Compiler) compileExpr(n node.Node, ref bool) string {
 		// @TokenKind
 		switch n.Token.Kind {
 		case token.Add:
-			return c.binaryOp(n, "add")
+			return c.binaryArithOp(n, "add")
 
 		case token.Sub:
-			return c.binaryOp(n, "sub")
+			return c.binaryArithOp(n, "sub")
 
 		case token.Mul:
-			return c.binaryOp(n, "mul")
+			return c.binaryArithOp(n, "mul")
 
 		case token.Div:
-			return c.binaryOp(n, "sdiv")
+			return c.binaryArithOp(n, "sdiv")
 
 		case token.Shl:
-			return c.binaryOp(n, "shl")
+			return c.binaryArithOp(n, "shl")
 
 		case token.Shr:
-			return c.binaryOp(n, "ashr")
+			return c.binaryArithOp(n, "ashr")
 
 		case token.BOr:
-			return c.binaryOp(n, "or")
+			return c.binaryArithOp(n, "or")
 
 		case token.BAnd:
-			return c.binaryOp(n, "and")
+			return c.binaryArithOp(n, "and")
 
 		case token.LOr:
-			return c.shortCircuitLogicalOp(n)
+			return c.binaryLogicalOp(n)
 
 		case token.LAnd:
-			return c.shortCircuitLogicalOp(n)
+			return c.binaryLogicalOp(n)
 
 		case token.Set:
 			lhs := c.compileExpr(n.Lhs, true)
