@@ -387,9 +387,9 @@ func (c *Compiler) compileExpr(n node.Node, ref bool) string {
 
 		case token.Shr:
 			if n.Type.IsSignedInt() {
-				return c.binaryArithOp(n, "lshr")
-			} else {
 				return c.binaryArithOp(n, "ashr")
+			} else {
+				return c.binaryArithOp(n, "lshr")
 			}
 
 		case token.BOr:
