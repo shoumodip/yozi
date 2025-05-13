@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"slices"
 	"strings"
 	"yozi/checker"
 	"yozi/node"
@@ -27,16 +26,16 @@ func llvmFormatType(t node.Type) string {
 	case node.TypeBool:
 		sb.WriteString("i1")
 
-	case node.TypeI8:
+	case node.TypeI8, node.TypeU8:
 		sb.WriteString("i8")
 
-	case node.TypeI16:
+	case node.TypeI16, node.TypeU16:
 		sb.WriteString("i16")
 
-	case node.TypeI32:
+	case node.TypeI32, node.TypeU32:
 		sb.WriteString("i32")
 
-	case node.TypeI64:
+	case node.TypeI64, node.TypeU64:
 		sb.WriteString("i64")
 
 	case node.TypeUnit:
@@ -183,9 +182,27 @@ func (c *Compiler) castOp(from node.Node, to node.Node) string {
 	llvmTo := llvmFormatType(toType)
 	llvmFrom := llvmFormatType(fromType)
 
-	signedInts := []node.TypeKind{node.TypeI8, node.TypeI16, node.TypeI32, node.TypeI64}
-	toSignedIntIndex := slices.Index(signedInts, toType.Kind)
-	fromSignedIntIndex := slices.Index(signedInts, fromType.Kind)
+	intSize := func(k node.TypeKind) int {
+		switch k {
+		case node.TypeI8, node.TypeU8:
+			return 8
+
+		case node.TypeI16, node.TypeU16:
+			return 16
+
+		case node.TypeI32, node.TypeU32:
+			return 32
+
+		case node.TypeI64, node.TypeU64:
+			return 64
+
+		default:
+			return -1
+		}
+	}
+
+	toIntSize := intSize(toType.Kind)
+	fromIntSize := intSize(fromType.Kind)
 
 	if fromType.Ref != 0 {
 		if toType.Ref != 0 {
@@ -198,7 +215,7 @@ func (c *Compiler) castOp(from node.Node, to node.Node) string {
 	} else if fromType.Kind == node.TypeBool {
 		// Boolean -> Integer
 		command = "zext"
-	} else if fromSignedIntIndex != -1 {
+	} else if fromIntSize != -1 {
 		if toType.Ref != 0 {
 			// Integer -> Pointer
 			command = "inttoptr"
@@ -206,11 +223,15 @@ func (c *Compiler) castOp(from node.Node, to node.Node) string {
 			// Integer -> Boolean
 			fmt.Fprintf(c.out, "    %s = icmp ne %s %s, 0\n", result, llvmFrom, fromExpr)
 			return result
-		} else if toSignedIntIndex != -1 {
+		} else if toIntSize != -1 {
 			// Integer -> Integer
-			if fromSignedIntIndex < toSignedIntIndex {
+			if fromIntSize < toIntSize {
 				// Extend
-				command = "sext"
+				if fromType.IsSignedInt() {
+					command = "sext"
+				} else {
+					command = "zext"
+				}
 			} else {
 				// Truncate
 				command = "trunc"
@@ -231,13 +252,13 @@ func (c *Compiler) compileExpr(n node.Node, ref bool) string {
 	switch n := n.(type) {
 	case *node.Atom:
 		if n.Token.IsInteger() {
-			return fmt.Sprintf("%d", n.Token.I64)
+			return fmt.Sprintf("%d", n.Token.Int)
 		}
 
 		// @TokenKind
 		switch n.Token.Kind {
 		case token.Bool:
-			return fmt.Sprintf("%d", n.Token.I64)
+			return fmt.Sprintf("%d", n.Token.Int)
 
 		case token.Ident:
 			switch def := n.Defined.(type) {
@@ -355,13 +376,21 @@ func (c *Compiler) compileExpr(n node.Node, ref bool) string {
 			return c.binaryArithOp(n, "mul")
 
 		case token.Div:
-			return c.binaryArithOp(n, "sdiv")
+			if n.Type.IsSignedInt() {
+				return c.binaryArithOp(n, "sdiv")
+			} else {
+				return c.binaryArithOp(n, "udiv")
+			}
 
 		case token.Shl:
 			return c.binaryArithOp(n, "shl")
 
 		case token.Shr:
-			return c.binaryArithOp(n, "ashr")
+			if n.Type.IsSignedInt() {
+				return c.binaryArithOp(n, "lshr")
+			} else {
+				return c.binaryArithOp(n, "ashr")
+			}
 
 		case token.BOr:
 			return c.binaryArithOp(n, "or")
@@ -384,16 +413,32 @@ func (c *Compiler) compileExpr(n node.Node, ref bool) string {
 			return ""
 
 		case token.Gt:
-			return c.binaryOp(n, "icmp sgt")
+			if n.Lhs.GetType().IsSignedInt() {
+				return c.binaryOp(n, "icmp sgt")
+			} else {
+				return c.binaryOp(n, "icmp ugt")
+			}
 
 		case token.Ge:
-			return c.binaryOp(n, "icmp sge")
+			if n.Lhs.GetType().IsSignedInt() {
+				return c.binaryOp(n, "icmp sge")
+			} else {
+				return c.binaryOp(n, "icmp uge")
+			}
 
 		case token.Lt:
-			return c.binaryOp(n, "icmp slt")
+			if n.Lhs.GetType().IsSignedInt() {
+				return c.binaryOp(n, "icmp slt")
+			} else {
+				return c.binaryOp(n, "icmp ult")
+			}
 
 		case token.Le:
-			return c.binaryOp(n, "icmp sle")
+			if n.Lhs.GetType().IsSignedInt() {
+				return c.binaryOp(n, "icmp sle")
+			} else {
+				return c.binaryOp(n, "icmp ule")
+			}
 
 		case token.Eq:
 			return c.binaryOp(n, "icmp eq")

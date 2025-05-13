@@ -1,6 +1,7 @@
 integers/arithmetics.yo
 integers/typed-literals.yo
 integers/untyped-literal-auto-cast.yo
+integers/error-type-mismatch.yo
 integers/error-invalid-suffix.yo
 integers/error-untyped-literal-auto-cast-too-large.yo
 booleans.yo

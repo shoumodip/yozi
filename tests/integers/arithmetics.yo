@@ -29,6 +29,10 @@ fn main() {
     print 1 != 2
     print 1 != 1
 
+    // Unsigned Comparisons
+    print -1u64 < 1u64
+    print -3u32 > 3u32
+
     // Bitwise
     print 276 >> 2
     print 105 << 2

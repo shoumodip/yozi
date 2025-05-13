@@ -1,8 +1,8 @@
-:i count 59
+:i count 60
 :b testcase 23
 integers/arithmetics.yo
 :i returncode 0
-:b stdout 70
+:b stdout 74
 69
 420
 69
@@ -24,6 +24,8 @@ integers/arithmetics.yo
 0
 1
 0
+0
+1
 69
 420
 69
@@ -54,6 +56,14 @@ integers/untyped-literal-auto-cast.yo
 80085
 
 :b stderr 0
+
+:b testcase 31
+integers/error-type-mismatch.yo
+:i returncode 1
+:b stdout 0
+
+:b stderr 72
+integers/error-type-mismatch.yo:1:17: ERROR: Expected type i32, got i64
 
 :b testcase 32
 integers/error-invalid-suffix.yo

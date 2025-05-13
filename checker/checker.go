@@ -13,6 +13,9 @@ func typeKindIsInteger(kind node.TypeKind) bool {
 	case node.TypeI8, node.TypeI16, node.TypeI32, node.TypeI64:
 		return true
 
+	case node.TypeU8, node.TypeU16, node.TypeU32, node.TypeU64:
+		return true
+
 	default:
 		return false
 	}
@@ -22,6 +25,8 @@ func typeAssert(n node.Node, expected node.Type) node.Type {
 	actual := n.GetType()
 	if !actual.Equal(expected) {
 		// Auto cast untyped integer literal to typed integer
+		//
+		// TODO: Perform constant analysis to auto cast arbritary expressions
 		if expected.Ref == 0 && typeKindIsInteger(expected.Kind) {
 			// Expected typed integer
 			if atom, ok := n.(*node.Atom); ok {
@@ -30,24 +35,24 @@ func typeAssert(n node.Node, expected node.Type) node.Type {
 					bits := 0
 
 					// @TypeKind
-					switch expected.Kind {
-					case node.TypeI8:
-						atom.Token.Kind = token.I8
-						bits = 8
+					conversions := map[node.TypeKind]struct {
+						kind token.Kind
+						bits int
+					}{
+						node.TypeI8:  {token.I8, 8},
+						node.TypeI16: {token.I16, 16},
+						node.TypeI32: {token.I32, 32},
+						node.TypeI64: {token.I64, 64},
+						node.TypeU8:  {token.U8, 8},
+						node.TypeU16: {token.U16, 16},
+						node.TypeU32: {token.U32, 32},
+						node.TypeU64: {token.U64, 64},
+					}
 
-					case node.TypeI16:
-						atom.Token.Kind = token.I16
-						bits = 16
-
-					case node.TypeI32:
-						atom.Token.Kind = token.I32
-						bits = 32
-
-					case node.TypeI64:
-						atom.Token.Kind = token.I64
-						bits = 64
-
-					default:
+					if c, ok := conversions[expected.Kind]; ok {
+						atom.Token.Kind = c.kind
+						bits = c.bits
+					} else {
 						panic("unreachable")
 					}
 
@@ -114,11 +119,11 @@ func typeAssertCastable(cast node.Node, from node.Node, to node.Node) node.Type 
 		// !64-bit Integer -> Pointer
 		// Pointer         -> !64-bit Integer
 		func(from node.Type, to node.Type) bool {
-			if to.Ref != 0 && from.Ref == 0 && from.Kind != node.TypeI64 {
+			if to.Ref != 0 && from.Ref == 0 && from.Kind != node.TypeI64 && from.Kind != node.TypeU64 {
 				return true
 			}
 
-			if from.Ref != 0 && to.Ref == 0 && to.Kind != node.TypeI64 {
+			if from.Ref != 0 && to.Ref == 0 && to.Kind != node.TypeI64 && to.Kind != node.TypeU64 {
 				return true
 			}
 
@@ -186,6 +191,18 @@ func (c *Context) checkType(n node.Node) {
 
 		case "i64":
 			n.Type = node.Type{Kind: node.TypeI64}
+
+		case "u8":
+			n.Type = node.Type{Kind: node.TypeU8}
+
+		case "u16":
+			n.Type = node.Type{Kind: node.TypeU16}
+
+		case "u32":
+			n.Type = node.Type{Kind: node.TypeU32}
+
+		case "u64":
+			n.Type = node.Type{Kind: node.TypeU64}
 
 		case "bool":
 			n.Type = node.Type{Kind: node.TypeBool}
@@ -298,6 +315,18 @@ func (c *Context) Check(n node.Node) {
 
 		case token.I64, token.Int:
 			n.Type = node.Type{Kind: node.TypeI64}
+
+		case token.U8:
+			n.Type = node.Type{Kind: node.TypeU8}
+
+		case token.U16:
+			n.Type = node.Type{Kind: node.TypeU16}
+
+		case token.U32:
+			n.Type = node.Type{Kind: node.TypeU32}
+
+		case token.U64:
+			n.Type = node.Type{Kind: node.TypeU64}
 
 		case token.Bool:
 			n.Type = (node.Type{Kind: node.TypeBool})

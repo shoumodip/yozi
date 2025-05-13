@@ -163,8 +163,7 @@ func (l *Lexer) Next() token.Token {
 		bits := 64
 		numStr := string(l.bytes[head:l.head])
 
-		// TODO: unsigned integer literal
-		if l.ch == 'i' {
+		if l.ch == 'i' || l.ch == 'u' {
 			suffixPos := l.pos
 			suffixStart := l.head
 
@@ -173,24 +172,25 @@ func (l *Lexer) Next() token.Token {
 				l.nextChar()
 			}
 
-			switch suffix := string(l.bytes[suffixStart:l.head]); suffix {
-			case "i8":
-				tok.Kind = token.I8
-				bits = 8
+			suffixes := map[string]struct {
+				kind token.Kind
+				bits int
+			}{
+				"i8":  {kind: token.I8, bits: 8},
+				"i16": {kind: token.I16, bits: 16},
+				"i32": {kind: token.I32, bits: 32},
+				"i64": {kind: token.I64, bits: 64},
+				"u8":  {kind: token.U8, bits: 8},
+				"u16": {kind: token.U16, bits: 16},
+				"u32": {kind: token.U32, bits: 32},
+				"u64": {kind: token.U64, bits: 64},
+			}
 
-			case "i16":
-				tok.Kind = token.I16
-				bits = 16
-
-			case "i32":
-				tok.Kind = token.I32
-				bits = 32
-
-			case "i64":
-				tok.Kind = token.I64
-				bits = 64
-
-			default:
+			suffix := string(l.bytes[suffixStart:l.head])
+			if s, ok := suffixes[suffix]; ok {
+				tok.Kind = s.kind
+				bits = s.bits
+			} else {
 				fmt.Fprintf(
 					os.Stderr,
 					"%s: ERROR: Invalid suffix '%s' to integer literal\n",
@@ -217,11 +217,11 @@ func (l *Lexer) Next() token.Token {
 		switch tok.Str {
 		case "true":
 			tok.Kind = token.Bool
-			tok.I64 = 1
+			tok.Int = 1
 
 		case "false":
 			tok.Kind = token.Bool
-			tok.I64 = 0
+			tok.Int = 0
 
 		case "as":
 			tok.Kind = token.As
